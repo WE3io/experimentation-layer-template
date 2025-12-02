@@ -1,0 +1,145 @@
+# =============================================================================
+# Policy Configuration Example
+# =============================================================================
+# Purpose: Template for defining policies and their versions
+#
+# Usage:
+#   Copy and modify for your policies:
+#   cp policies.example.yml policies.yml
+#
+# Related:
+#   - docs/mlflow-guide.md
+#   - docs/model-promotion.md
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Policy Definitions
+# -----------------------------------------------------------------------------
+policies:
+
+  # ---------------------------------------------------------------------------
+  # Planner Policy
+  # ---------------------------------------------------------------------------
+  - name: planner_policy
+    description: "Main meal planning policy"
+    
+    versions:
+      - version: 1
+        description: "Initial production model"
+        mlflow_model_name: planner_model
+        mlflow_model_version: "1"
+        status: archived
+        config_defaults:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+      
+      - version: 2
+        description: "Improved constraint handling"
+        mlflow_model_name: planner_model
+        mlflow_model_version: "3"
+        status: deprecated
+        config_defaults:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+          constraint_weight: 1.5
+      
+      - version: 3
+        description: "Leftovers optimization v1"
+        mlflow_model_name: planner_model
+        mlflow_model_version: "5"
+        status: active           # Currently in production
+        config_defaults:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+          leftovers_weight: 1.2
+      
+      - version: 4
+        description: "Leftovers optimization v2 - candidate"
+        mlflow_model_name: planner_model
+        mlflow_model_version: "6"
+        status: active           # In experiment
+        config_defaults:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+          leftovers_weight: 1.5
+          diversity_weight: 1.1
+
+  # ---------------------------------------------------------------------------
+  # Meal Ranking Policy
+  # ---------------------------------------------------------------------------
+  - name: meal_ranking_policy
+    description: "Policy for ranking meal suggestions"
+    
+    versions:
+      - version: 1
+        description: "Baseline ranking"
+        mlflow_model_name: meal_ranker_model
+        mlflow_model_version: "1"
+        status: active
+        config_defaults:
+          top_k: 10
+          diversity_penalty: 0.1
+      
+      - version: 2
+        description: "Personalization enabled"
+        mlflow_model_name: meal_ranker_model
+        mlflow_model_version: "2"
+        status: active
+        config_defaults:
+          top_k: 10
+          diversity_penalty: 0.1
+          use_personalization: true
+          history_window_days: 30
+
+  # ---------------------------------------------------------------------------
+  # Recipe Recommendation Policy
+  # ---------------------------------------------------------------------------
+  - name: recipe_recommendation_policy
+    description: "Policy for recommending new recipes"
+    
+    versions:
+      - version: 1
+        description: "Initial version"
+        mlflow_model_name: recipe_recommender_model
+        mlflow_model_version: "1"
+        status: active
+        config_defaults:
+          max_recommendations: 5
+          novelty_weight: 0.3
+
+# -----------------------------------------------------------------------------
+# Configuration Notes
+# -----------------------------------------------------------------------------
+#
+# 1. Version Status:
+#    - active: Can be used in experiments
+#    - deprecated: Still works but should migrate
+#    - archived: No longer available
+#
+# 2. MLflow Linking:
+#    - mlflow_model_name: Name in MLflow Model Registry
+#    - mlflow_model_version: Specific version number
+#
+# 3. Config Defaults:
+#    - Applied when loading the model
+#    - Can be overridden by variant params
+#
+# 4. Promotion Flow:
+#    - Train model → Register in MLflow
+#    - Run offline evaluation
+#    - Create policy version here
+#    - Create experiment variant
+#    - Monitor and promote
+#
+# -----------------------------------------------------------------------------
+# TODO: Implementation Notes
+# -----------------------------------------------------------------------------
+# [ ] Add schema validation
+# [ ] Add MLflow version verification
+# [ ] Add config loader
+# [ ] Add policy sync script
+

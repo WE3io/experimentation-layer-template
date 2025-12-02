@@ -1,0 +1,169 @@
+# =============================================================================
+# Experiment Configuration Example
+# =============================================================================
+# Purpose: Template for defining experiments
+#
+# Usage:
+#   Copy and modify for your experiment:
+#   cp experiments.example.yml experiments.yml
+#
+# Related:
+#   - docs/experiments.md
+#   - services/assignment-service/API_SPEC.md
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Experiment Definitions
+# -----------------------------------------------------------------------------
+experiments:
+
+  # ---------------------------------------------------------------------------
+  # Example 1: A/B Test for Planner Policy
+  # ---------------------------------------------------------------------------
+  - name: planner_policy_exp
+    description: "Test new planner model with improved leftovers optimization"
+    unit_type: user        # user | household | session
+    status: active         # draft | active | paused | completed
+    start_at: "2025-01-01T00:00:00Z"
+    end_at: null           # null for ongoing experiments
+    
+    variants:
+      - name: control
+        description: "Current production model"
+        allocation: 0.5    # 50% of traffic
+        config:
+          policy_version_id: "uuid-policy-v1"
+          params: {}
+      
+      - name: leftovers_v2
+        description: "New model with leftovers optimization"
+        allocation: 0.5    # 50% of traffic
+        config:
+          policy_version_id: "uuid-policy-v2"
+          params:
+            exploration_rate: 0.2
+            leftovers_weight: 1.5
+
+  # ---------------------------------------------------------------------------
+  # Example 2: Gradual Rollout
+  # ---------------------------------------------------------------------------
+  - name: new_planner_rollout
+    description: "Gradual rollout of new planner model"
+    unit_type: household
+    status: active
+    start_at: "2025-01-15T00:00:00Z"
+    end_at: null
+    
+    variants:
+      - name: control
+        description: "Current production"
+        allocation: 0.9    # 90% of traffic
+        config:
+          policy_version_id: "uuid-policy-v3"
+      
+      - name: new_model
+        description: "New model under test"
+        allocation: 0.1    # 10% of traffic (start small!)
+        config:
+          policy_version_id: "uuid-policy-v4"
+          params:
+            temperature: 0.7
+
+  # ---------------------------------------------------------------------------
+  # Example 3: Multi-Variant Test
+  # ---------------------------------------------------------------------------
+  - name: meal_ranking_exp
+    description: "Test different meal ranking strategies"
+    unit_type: user
+    status: draft          # Not yet active
+    start_at: null
+    end_at: null
+    
+    variants:
+      - name: control
+        description: "Baseline ranking"
+        allocation: 0.4
+        config:
+          policy_version_id: "uuid-ranking-v1"
+      
+      - name: popularity_boost
+        description: "Boost popular meals"
+        allocation: 0.2
+        config:
+          policy_version_id: "uuid-ranking-v2"
+          params:
+            popularity_weight: 2.0
+      
+      - name: diversity_boost
+        description: "Prioritize variety"
+        allocation: 0.2
+        config:
+          policy_version_id: "uuid-ranking-v3"
+          params:
+            diversity_weight: 2.0
+      
+      - name: personalized
+        description: "User preference learning"
+        allocation: 0.2
+        config:
+          policy_version_id: "uuid-ranking-v4"
+          params:
+            use_preferences: true
+
+  # ---------------------------------------------------------------------------
+  # Example 4: Feature Flag (Simple On/Off)
+  # ---------------------------------------------------------------------------
+  - name: pantry_suggestions_exp
+    description: "Test showing pantry-based suggestions"
+    unit_type: user
+    status: active
+    start_at: "2025-02-01T00:00:00Z"
+    end_at: null
+    
+    variants:
+      - name: control
+        description: "No pantry suggestions"
+        allocation: 0.5
+        config:
+          feature_enabled: false
+      
+      - name: treatment
+        description: "Show pantry suggestions"
+        allocation: 0.5
+        config:
+          feature_enabled: true
+          max_suggestions: 5
+
+# -----------------------------------------------------------------------------
+# Configuration Notes
+# -----------------------------------------------------------------------------
+# 
+# 1. Allocation Rules:
+#    - Total allocation should equal 1.0 (100%)
+#    - Start new variants with ≤10% for safety
+#    - Increase gradually based on monitoring
+#
+# 2. Naming Conventions:
+#    - Experiment: {feature}_exp
+#    - Control variant: control
+#    - Treatment variants: descriptive name (e.g., leftovers_v2)
+#
+# 3. Config Structure:
+#    - policy_version_id: Reference to exp.policy_versions
+#    - params: Runtime parameters for the model
+#    - feature_enabled: For simple feature flags
+#
+# 4. Status Lifecycle:
+#    - draft: Configuring, no traffic
+#    - active: Running, receiving traffic
+#    - paused: Temporarily stopped
+#    - completed: Analysis done
+#
+# -----------------------------------------------------------------------------
+# TODO: Implementation Notes
+# -----------------------------------------------------------------------------
+# [ ] Add schema validation
+# [ ] Add allocation validation (sum = 1.0)
+# [ ] Add config loader
+# [ ] Add experiment sync script
+

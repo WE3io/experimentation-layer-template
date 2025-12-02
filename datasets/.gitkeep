@@ -1,0 +1,4 @@
+# This file ensures the datasets directory is tracked by git
+# Actual datasets are stored in object storage (S3/MinIO)
+# See README.md for dataset conventions
+

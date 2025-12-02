@@ -1,0 +1,172 @@
+# =============================================================================
+# Training Configuration Template
+# =============================================================================
+# Purpose: Example configuration for model training
+#
+# Usage:
+#   Copy this file and modify for your training run:
+#   cp training_config.example.yaml training_config.yaml
+#
+# Related:
+#   - docs/training-workflow.md
+#   - training/train_planner.py
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Model Configuration
+# -----------------------------------------------------------------------------
+model:
+  # Base model to fine-tune
+  base_model: "llama-3-8b"
+  
+  # Model type (for architecture-specific settings)
+  model_type: "causal_lm"
+  
+  # Precision (fp16, bf16, fp32)
+  precision: "bf16"
+
+# -----------------------------------------------------------------------------
+# Dataset Configuration
+# -----------------------------------------------------------------------------
+dataset:
+  # Path to dataset directory
+  path: "/datasets/planner/2025-01-03"
+  
+  # Train/validation split
+  train_split: 0.9
+  val_split: 0.1
+  
+  # Max sequence length
+  max_length: 2048
+  
+  # Preprocessing
+  preprocessing:
+    # How to format input/output for training
+    input_template: |
+      ### Input:
+      Household: {household}
+      Pantry: {pantry}
+      Constraints: {constraints}
+      
+      ### Output:
+    
+    output_template: |
+      {accepted_plan}
+
+# -----------------------------------------------------------------------------
+# Training Hyperparameters
+# -----------------------------------------------------------------------------
+training:
+  # Learning rate
+  learning_rate: 1e-4
+  
+  # Learning rate scheduler
+  lr_scheduler: "cosine"
+  warmup_ratio: 0.1
+  
+  # Batch size
+  batch_size: 16
+  gradient_accumulation_steps: 4
+  
+  # Epochs
+  epochs: 3
+  
+  # Optimizer
+  optimizer: "adamw"
+  weight_decay: 0.01
+  
+  # Gradient clipping
+  max_grad_norm: 1.0
+  
+  # Checkpointing
+  save_steps: 500
+  eval_steps: 100
+  
+  # Early stopping
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.01
+
+# -----------------------------------------------------------------------------
+# LoRA Configuration
+# -----------------------------------------------------------------------------
+lora:
+  # Enable LoRA
+  enabled: true
+  
+  # LoRA rank
+  r: 16
+  
+  # LoRA alpha
+  alpha: 32
+  
+  # Dropout
+  dropout: 0.05
+  
+  # Target modules
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+  
+  # Use QLoRA (quantized)
+  use_qlora: false
+  
+  # Quantization bits (for QLoRA)
+  bits: 4
+
+# -----------------------------------------------------------------------------
+# MLflow Configuration
+# -----------------------------------------------------------------------------
+mlflow:
+  # Experiment name
+  experiment_name: "planner_training"
+  
+  # Run name (optional, auto-generated if not set)
+  run_name: null
+  
+  # Tags
+  tags:
+    policy_id: "planner_policy"
+    task: "planner"
+  
+  # Log frequency
+  log_every_n_steps: 10
+
+# -----------------------------------------------------------------------------
+# Output Configuration
+# -----------------------------------------------------------------------------
+output:
+  # Output directory
+  dir: "./output"
+  
+  # Model name for registration
+  model_name: "planner_model"
+  
+  # Save format
+  save_format: "safetensors"
+
+# -----------------------------------------------------------------------------
+# Hardware Configuration
+# -----------------------------------------------------------------------------
+hardware:
+  # Number of GPUs
+  num_gpus: 1
+  
+  # Mixed precision
+  mixed_precision: true
+  
+  # Gradient checkpointing (reduces memory)
+  gradient_checkpointing: true
+  
+  # Flash attention
+  use_flash_attention: true
+
+# -----------------------------------------------------------------------------
+# TODO: Implementation Notes
+# -----------------------------------------------------------------------------
+# [ ] Implement configuration loader
+# [ ] Add validation for config values
+# [ ] Support environment variable overrides
+# [ ] Add config versioning
+
