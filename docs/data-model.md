@@ -74,7 +74,8 @@ CREATE TABLE exp.variants (
     allocation      DECIMAL(5,4) NOT NULL,
                     -- 0.0000 to 1.0000 (percentage as decimal)
     config          JSONB NOT NULL DEFAULT '{}',
-                    -- Contains policy_version_id, params, etc.
+                    -- Unified config structure supporting both ML and conversational AI
+                    -- See Config Structure section below for details
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     UNIQUE(experiment_id, name)
@@ -84,12 +85,148 @@ CREATE TABLE exp.variants (
 CREATE INDEX idx_variants_experiment ON exp.variants(experiment_id);
 ```
 
-**Config Structure Example**:
+#### Config Structure
+
+The `config` JSONB field supports a unified abstraction that works for both traditional ML projects and conversational AI projects. The structure is flexible and can represent different execution strategies.
+
+**Unified Config Schema:**
+
+The config can use one of three execution strategies:
+
+1. **`mlflow_model`** - For traditional ML projects using trained models
+2. **`prompt_template`** - For conversational AI projects using prompts and flows
+3. **`hybrid`** - For projects combining both approaches
+
+**Execution Strategy Field:**
+
+- **`execution_strategy`** (optional, string): Specifies how the variant should be executed
+  - Valid values: `"mlflow_model"`, `"prompt_template"`, `"hybrid"`
+  - If omitted, the system assumes `"mlflow_model"` for backward compatibility
+
+**ML Model Configuration (`mlflow_model` execution strategy):**
+
+```json
+{
+  "execution_strategy": "mlflow_model",
+  "mlflow_model": {
+    "policy_version_id": "uuid-policy-version",
+    "model_name": "planner_model"
+  },
+  "params": {
+    "exploration_rate": 0.15,
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }
+}
+```
+
+- **`mlflow_model`** (object, required when `execution_strategy` is `"mlflow_model"` or `"hybrid"`):
+  - **`policy_version_id`** (string, UUID): Reference to `exp.policy_versions.id`
+  - **`model_name`** (string, optional): MLflow model name for reference
+
+**Prompt Template Configuration (`prompt_template` execution strategy):**
+
+```json
+{
+  "execution_strategy": "prompt_template",
+  "prompt_config": {
+    "prompt_version_id": "uuid-prompt-v1",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "flow_config": {
+    "flow_id": "onboarding_v1",
+    "initial_state": "welcome"
+  },
+  "params": {
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }
+}
+```
+
+- **`prompt_config`** (object, required when `execution_strategy` is `"prompt_template"` or `"hybrid"`):
+  - **`prompt_version_id`** (string, UUID): Reference to `exp.prompt_versions.id`
+  - **`model_provider`** (string): LLM provider (e.g., `"anthropic"`, `"openai"`)
+  - **`model_name`** (string): Specific model identifier (e.g., `"claude-sonnet-4.5"`, `"gpt-4"`)
+
+- **`flow_config`** (object, optional): Conversation flow configuration
+  - **`flow_id`** (string): Identifier for the conversation flow definition
+  - **`initial_state`** (string): Starting state in the flow state machine
+
+**Shared Parameters:**
+
+- **`params`** (object, optional): Runtime parameters applied to the execution
+  - Common parameters: `temperature`, `max_tokens`, `top_p`, etc.
+  - Parameters are execution-strategy agnostic and can be used with any strategy
+
+**Backward Compatibility:**
+
+The system maintains full backward compatibility with existing ML projects. The legacy format without `execution_strategy` is still supported:
+
 ```json
 {
   "policy_version_id": "uuid-policy-version",
   "params": {
     "exploration_rate": 0.15,
+    "temperature": 0.7
+  }
+}
+```
+
+When `execution_strategy` is omitted, the system automatically treats the config as `execution_strategy: "mlflow_model"` and extracts `policy_version_id` from the root level. This ensures existing experiments continue to work without modification.
+
+**Example Configurations:**
+
+**Traditional ML Experiment:**
+```json
+{
+  "execution_strategy": "mlflow_model",
+  "mlflow_model": {
+    "policy_version_id": "550e8400-e29b-41d4-a716-446655440000",
+    "model_name": "planner_model"
+  },
+  "params": {
+    "temperature": 0.7,
+    "exploration_rate": 0.15
+  }
+}
+```
+
+**Conversational AI Experiment:**
+```json
+{
+  "execution_strategy": "prompt_template",
+  "prompt_config": {
+    "prompt_version_id": "660e8400-e29b-41d4-a716-446655440001",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "flow_config": {
+    "flow_id": "onboarding_v1",
+    "initial_state": "welcome"
+  },
+  "params": {
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }
+}
+```
+
+**Hybrid Experiment (combining both):**
+```json
+{
+  "execution_strategy": "hybrid",
+  "mlflow_model": {
+    "policy_version_id": "550e8400-e29b-41d4-a716-446655440000",
+    "model_name": "planner_model"
+  },
+  "prompt_config": {
+    "prompt_version_id": "660e8400-e29b-41d4-a716-446655440001",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "params": {
     "temperature": 0.7
   }
 }
