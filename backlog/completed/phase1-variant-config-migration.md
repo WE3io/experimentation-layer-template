@@ -24,13 +24,13 @@ A reviewer can run the migration against a database with existing variant config
 
 ## Acceptance Checks
 
-- [ ] Migration file created in `infra/migrations/` (or appropriate location)
-- [ ] Migration adds no breaking changes to existing configs
-- [ ] Migration can be applied to database with existing variant configs
-- [ ] Migration can be rolled back without data loss
-- [ ] `infra/postgres-schema-overview.sql` updated with config structure comments
-- [ ] Migration includes comments explaining backward compatibility approach
-- [ ] Test script or instructions verify existing configs still work after migration
+- [x] Migration file created in `infra/migrations/` (or appropriate location)
+- [x] Migration adds no breaking changes to existing configs
+- [x] Migration can be applied to database with existing variant configs
+- [x] Migration can be rolled back without data loss
+- [x] `infra/postgres-schema-overview.sql` updated with config structure comments
+- [x] Migration includes comments explaining backward compatibility approach
+- [x] Test script or instructions verify existing configs still work after migration
 
 ## Explicit Non-Goals
 

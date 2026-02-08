@@ -52,7 +52,10 @@ CREATE TABLE IF NOT EXISTS exp.variants (
     allocation      DECIMAL(5,4) NOT NULL,
                     -- 0.0000 to 1.0000 (percentage as decimal)
     config          JSONB NOT NULL DEFAULT '{}',
-                    -- Contains: policy_version_id, params, etc.
+                    -- Unified config structure supporting both ML and conversational AI
+                    -- Supports execution_strategy: mlflow_model | prompt_template | hybrid
+                    -- Legacy format (policy_version_id at root) remains supported
+                    -- See docs/data-model.md section 1.2 for complete structure documentation
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     CONSTRAINT uq_variants_experiment_name UNIQUE(experiment_id, name),
