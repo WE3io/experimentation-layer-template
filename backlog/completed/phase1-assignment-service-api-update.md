@@ -19,14 +19,14 @@ A reviewer can read the API spec and understand how to call the service with bot
 
 ## Acceptance Checks
 
-- [ ] API_SPEC.md section 6 (Config Structure) updated with unified config format
-- [ ] Request examples show both old (`policy_version_id`) and new (`execution_strategy`) formats
-- [ ] Response examples show unified config structure
-- [ ] Examples include `mlflow_model` execution strategy
-- [ ] Examples include `prompt_template` execution strategy
-- [ ] Backward compatibility section explains old format still supported
-- [ ] SDK examples updated to show new config structure
-- [ ] Documentation matches existing API spec style
+- [x] API_SPEC.md section 6 (Config Structure) updated with unified config format
+- [x] Request examples show both old (`policy_version_id`) and new (`execution_strategy`) formats
+- [x] Response examples show unified config structure
+- [x] Examples include `mlflow_model` execution strategy
+- [x] Examples include `prompt_template` execution strategy
+- [x] Backward compatibility section explains old format still supported
+- [x] SDK examples updated to show new config structure
+- [x] Documentation matches existing API spec style
 
 ## Explicit Non-Goals
 

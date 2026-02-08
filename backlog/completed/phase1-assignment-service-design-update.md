@@ -19,13 +19,13 @@ A reviewer can read the design doc and understand the implementation approach fo
 
 ## Acceptance Checks
 
-- [ ] DESIGN.md updated with unified config parsing logic
-- [ ] Backward compatibility handling documented (how old configs are processed)
-- [ ] Config validation approach described
-- [ ] Caching strategy updated if config structure affects cache keys
-- [ ] Error handling for invalid config structures documented
-- [ ] Performance considerations for config parsing documented
-- [ ] Design matches existing document style and structure
+- [x] DESIGN.md updated with unified config parsing logic
+- [x] Backward compatibility handling documented (how old configs are processed)
+- [x] Config validation approach described
+- [x] Caching strategy updated if config structure affects cache keys
+- [x] Error handling for invalid config structures documented
+- [x] Performance considerations for config parsing documented
+- [x] Design matches existing document style and structure
 
 ## Explicit Non-Goals
 
