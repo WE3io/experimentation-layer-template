@@ -183,7 +183,50 @@ CREATE INDEX IF NOT EXISTS idx_policy_versions_mlflow ON exp.policy_versions(
 );
 
 -- =============================================================================
--- 4. OFFLINE EVALUATION
+-- 4. PROMPT REGISTRY (CONVERSATIONAL AI)
+-- =============================================================================
+
+-- exp.prompts: Named prompts for conversational AI projects
+-- Related: docs/data-model.md section 4.1
+CREATE TABLE IF NOT EXISTS exp.prompts (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            VARCHAR(255) NOT NULL UNIQUE,
+    description     TEXT,
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompts_name ON exp.prompts(name);
+
+-- exp.prompt_versions: Versioned prompt configurations
+-- Related: docs/data-model.md section 4.2
+CREATE TABLE IF NOT EXISTS exp.prompt_versions (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    prompt_id           UUID NOT NULL REFERENCES exp.prompts(id) ON DELETE CASCADE,
+    version             INTEGER NOT NULL,
+    file_path           VARCHAR(500) NOT NULL,
+                        -- Path relative to repo root (e.g., "prompts/meal_planning_v1.txt")
+    model_provider      VARCHAR(100) NOT NULL,
+                        -- LLM provider: "anthropic", "openai", etc.
+    model_name          VARCHAR(255) NOT NULL,
+                        -- Model identifier: "claude-sonnet-4.5", "gpt-4", etc.
+    config_defaults     JSONB NOT NULL DEFAULT '{}',
+                        -- Default parameters (temperature, max_tokens, etc.)
+    status              VARCHAR(50) NOT NULL DEFAULT 'active',
+                        -- active, deprecated, archived
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    CONSTRAINT uq_prompt_versions UNIQUE(prompt_id, version),
+    CONSTRAINT chk_prompt_versions_status CHECK (
+        status IN ('active', 'deprecated', 'archived')
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_versions_prompt ON exp.prompt_versions(prompt_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_versions_status ON exp.prompt_versions(status);
+CREATE INDEX IF NOT EXISTS idx_prompt_versions_provider ON exp.prompt_versions(model_provider, model_name);
+
+-- =============================================================================
+-- 5. OFFLINE EVALUATION
 -- =============================================================================
 
 -- exp.offline_replay_results: Offline evaluation results
@@ -220,7 +263,7 @@ CREATE INDEX IF NOT EXISTS idx_replay_policy ON exp.offline_replay_results(polic
 CREATE INDEX IF NOT EXISTS idx_replay_dataset ON exp.offline_replay_results(dataset_version);
 
 -- =============================================================================
--- 5. VIEWS
+-- 6. VIEWS
 -- =============================================================================
 
 -- View: Experiment metrics for dashboards
@@ -263,8 +306,17 @@ SELECT
 FROM exp.policy_versions pv
 JOIN exp.policies p ON p.id = pv.policy_id;
 
+-- View: Prompt versions with prompt info
+CREATE OR REPLACE VIEW exp.v_prompt_versions AS
+SELECT
+    pv.*,
+    p.name AS prompt_name,
+    p.description AS prompt_description
+FROM exp.prompt_versions pv
+JOIN exp.prompts p ON p.id = pv.prompt_id;
+
 -- =============================================================================
--- 6. FUNCTIONS (Optional helpers)
+-- 7. FUNCTIONS (Optional helpers)
 -- =============================================================================
 
 -- Function: Update timestamp on experiments

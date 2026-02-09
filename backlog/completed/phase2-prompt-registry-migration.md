@@ -24,14 +24,14 @@ A reviewer can run the migration and verify that:
 
 ## Acceptance Checks
 
-- [ ] Migration file created in `infra/migrations/` (or appropriate location)
-- [ ] Migration creates `exp.prompts` table
-- [ ] Migration creates `exp.prompt_versions` table
-- [ ] Foreign key constraint from `prompt_versions` to `prompts` created
-- [ ] Indexes created for common query patterns
-- [ ] Rollback script removes tables and indexes
-- [ ] `infra/postgres-schema-overview.sql` updated with new table definitions
-- [ ] Migration can be applied and rolled back without errors
+- [x] Migration file created in `infra/migrations/` (location: `infra/migrations/002_add_prompt_registry.sql`)
+- [x] Migration creates `exp.prompts` table
+- [x] Migration creates `exp.prompt_versions` table
+- [x] Foreign key constraint from `prompt_versions` to `prompts` created
+- [x] Indexes created for common query patterns
+- [x] Rollback script removes tables and indexes
+- [x] `infra/postgres-schema-overview.sql` updated with new table definitions
+- [x] Migration can be applied and rolled back without errors
 
 ## Explicit Non-Goals
 

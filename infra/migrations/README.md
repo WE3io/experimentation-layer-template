@@ -12,6 +12,7 @@ Migrations are numbered sequentially and include both forward and rollback scrip
 ### Current Migrations
 
 - `001_add_unified_variant_config_support.sql` - Adds support for unified variant config structure while maintaining backward compatibility
+- `002_add_prompt_registry.sql` - Creates exp.prompts and exp.prompt_versions tables for conversational AI prompt management
 
 ---
 
