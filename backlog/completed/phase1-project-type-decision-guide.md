@@ -19,14 +19,14 @@ A reviewer can read the guide and confidently choose the appropriate project typ
 
 ## Acceptance Checks
 
-- [ ] File `docs/choosing-project-type.md` created
-- [ ] Guide explains ML project type (model training, fine-tuning)
-- [ ] Guide explains conversational AI project type (prompts, flows, foundation models)
-- [ ] Decision criteria provided (when to use each)
-- [ ] Examples show typical use cases for each type
-- [ ] Links to relevant documentation for each project type
-- [ ] Matches existing documentation style and structure
-- [ ] Added to `docs/README.md` navigation if appropriate
+- [x] File `docs/choosing-project-type.md` created
+- [x] Guide explains ML project type (model training, fine-tuning)
+- [x] Guide explains conversational AI project type (prompts, flows, foundation models)
+- [x] Decision criteria provided (when to use each)
+- [x] Examples show typical use cases for each type
+- [x] Links to relevant documentation for each project type
+- [x] Matches existing documentation style and structure
+- [x] Added to `docs/README.md` navigation if appropriate
 
 ## Explicit Non-Goals
 

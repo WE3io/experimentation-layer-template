@@ -9,6 +9,7 @@ This directory contains all core documentation for the experimentation and model
 
 | Your Goal | Start With |
 |-----------|------------|
+| Starting a new project | [choosing-project-type.md](choosing-project-type.md) → choose ML or conversational AI |
 | Understand the full system | [architecture.md](architecture.md) → follow sequential path |
 | Define or run experiments | [experiments.md](experiments.md) |
 | Log events from your service | [event-ingestion-service.md](event-ingestion-service.md) |
@@ -39,6 +40,10 @@ The guide includes prompts for:
 ## Sequential Learning Path
 
 Complete these in order for full understanding:
+
+### Phase 0: Project Setup
+0. **[choosing-project-type.md](choosing-project-type.md)**  
+   Choose between ML and conversational AI approaches
 
 ### Phase 1: Foundation
 1. **[architecture.md](architecture.md)**  
@@ -95,6 +100,7 @@ For developers who want to dive into specific areas:
 
 | File | Purpose |
 |------|---------|
+| `choosing-project-type.md` | Decision guide for ML vs. conversational AI |
 | `architecture.md` | System overview and component relationships |
 | `data-model.md` | PostgreSQL schema definitions |
 | `experiments.md` | Experiment concepts and configuration |
