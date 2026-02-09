@@ -134,6 +134,87 @@ experiments:
           feature_enabled: true
           max_suggestions: 5
 
+  # ---------------------------------------------------------------------------
+  # Example 5: ML Model with Unified Config Format
+  # ---------------------------------------------------------------------------
+  # Uses execution_strategy: "mlflow_model" for traditional ML projects
+  # This is the recommended format for new experiments
+  - name: planner_model_v3_exp
+    description: "Test new planner model using unified config format"
+    unit_type: user
+    status: active
+    start_at: "2025-03-01T00:00:00Z"
+    end_at: null
+    
+    variants:
+      - name: control
+        description: "Current production model"
+        allocation: 0.5
+        config:
+          execution_strategy: "mlflow_model"
+          mlflow_model:
+            policy_version_id: "550e8400-e29b-41d4-a716-446655440000"
+            model_name: "planner_model"
+          params:
+            temperature: 0.7
+      
+      - name: v3_model
+        description: "New model version 3"
+        allocation: 0.5
+        config:
+          execution_strategy: "mlflow_model"
+          mlflow_model:
+            policy_version_id: "660e8400-e29b-41d4-a716-446655440001"
+            model_name: "planner_model"
+          params:
+            temperature: 0.8
+            exploration_rate: 0.15
+
+  # ---------------------------------------------------------------------------
+  # Example 6: Conversational AI with Prompt Template
+  # ---------------------------------------------------------------------------
+  # Uses execution_strategy: "prompt_template" for chatbot/conversational AI
+  # projects using LLM providers
+  - name: chatbot_assistant_exp
+    description: "Test different prompt templates for meal planning assistant"
+    unit_type: user
+    status: active
+    start_at: "2025-03-15T00:00:00Z"
+    end_at: null
+    
+    variants:
+      - name: control
+        description: "Baseline prompt template"
+        allocation: 0.5
+        config:
+          execution_strategy: "prompt_template"
+          prompt_config:
+            prompt_version_id: "770e8400-e29b-41d4-a716-446655440002"
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+          flow_config:
+            flow_id: "onboarding_v1"
+            initial_state: "welcome"
+          params:
+            temperature: 0.7
+            max_tokens: 2048
+      
+      - name: concise_prompt
+        description: "More concise prompt template"
+        allocation: 0.5
+        config:
+          execution_strategy: "prompt_template"
+          prompt_config:
+            prompt_version_id: "880e8400-e29b-41d4-a716-446655440003"
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+          flow_config:
+            flow_id: "onboarding_v1"
+            initial_state: "welcome"
+          params:
+            temperature: 0.5
+            max_tokens: 1024
+
 # -----------------------------------------------------------------------------
 # Configuration Notes
 # -----------------------------------------------------------------------------
@@ -149,9 +230,27 @@ experiments:
 #    - Treatment variants: descriptive name (e.g., leftovers_v2)
 #
 # 3. Config Structure:
+#    
+#    Legacy Format (still supported for backward compatibility):
 #    - policy_version_id: Reference to exp.policy_versions
 #    - params: Runtime parameters for the model
 #    - feature_enabled: For simple feature flags
+#
+#    Unified Format (recommended for new experiments):
+#    - execution_strategy: "mlflow_model" | "prompt_template" | "hybrid"
+#    
+#    For ML projects (execution_strategy: "mlflow_model"):
+#    - mlflow_model.policy_version_id: Reference to exp.policy_versions
+#    - mlflow_model.model_name: MLflow model name (optional)
+#    - params: Runtime parameters
+#
+#    For Conversational AI (execution_strategy: "prompt_template"):
+#    - prompt_config.prompt_version_id: Reference to exp.prompt_versions
+#    - prompt_config.model_provider: LLM provider (e.g., "anthropic", "openai")
+#    - prompt_config.model_name: Model identifier (e.g., "claude-sonnet-4.5")
+#    - flow_config.flow_id: Conversation flow identifier (optional)
+#    - flow_config.initial_state: Starting state in flow (optional)
+#    - params: Runtime parameters
 #
 # 4. Status Lifecycle:
 #    - draft: Configuring, no traffic

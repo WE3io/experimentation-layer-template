@@ -19,13 +19,13 @@ A reviewer can copy `experiments.example.yml` and see examples of both ML and co
 
 ## Acceptance Checks
 
-- [ ] File includes example with `execution_strategy: "mlflow_model"`
-- [ ] File includes example with `execution_strategy: "prompt_template"`
-- [ ] Examples show complete variant config structure
-- [ ] Comments explain execution strategies
-- [ ] Existing examples retained (for backward compatibility reference)
-- [ ] YAML syntax is valid
-- [ ] Examples match structure from proposal
+- [x] File includes example with `execution_strategy: "mlflow_model"`
+- [x] File includes example with `execution_strategy: "prompt_template"`
+- [x] Examples show complete variant config structure
+- [x] Comments explain execution strategies
+- [x] Existing examples retained (for backward compatibility reference)
+- [x] YAML syntax is valid
+- [x] Examples match structure from proposal
 
 ## Explicit Non-Goals
 
