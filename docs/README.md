@@ -75,8 +75,12 @@ Complete these in order for full understanding:
 9. **[model-promotion.md](model-promotion.md)**  
    Moving models through candidate → production
 
-### Phase 4: Monitoring
-10. **[../analytics/metabase-models.md](../analytics/metabase-models.md)**  
+### Phase 4: Conversational AI (New)
+10. **[mcp-integration.md](mcp-integration.md)**  
+    MCP integration for external tools and data sources
+
+### Phase 5: Monitoring
+11. **[../analytics/metabase-models.md](../analytics/metabase-models.md)**  
     Dashboards and metrics visualisation
 
 ---
@@ -112,6 +116,7 @@ For developers who want to dive into specific areas:
 | `model-promotion.md` | Promotion lifecycle |
 | `mlops-concepts.md` | Primer for developers new to MLOps |
 | `ai-learning-prompts.md` | Prompts for active learning with AI assistants |
+| `mcp-integration.md` | MCP (Model Context Protocol) integration guide |
 
 ---
 

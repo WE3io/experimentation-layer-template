@@ -1,0 +1,63 @@
+{
+  "servers": {
+    "database_server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://user:password@localhost:5432/dbname"
+      },
+      "description": "PostgreSQL database server for querying and executing SQL"
+    },
+    "api_server": {
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server_api"
+      ],
+      "env": {
+        "API_BASE_URL": "https://api.example.com",
+        "API_KEY": "${API_KEY}"
+      },
+      "description": "REST API server for making HTTP requests to external services"
+    },
+    "filesystem_server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem"
+      ],
+      "env": {
+        "ALLOWED_DIRECTORIES": "/data:/tmp:/var/log"
+      },
+      "description": "File system server for reading and writing files"
+    },
+    "github_server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub server for repository operations and issue management"
+    },
+    "brave_search_server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Brave Search API server for web search capabilities"
+    }
+  },
+  "default_timeout_seconds": 30,
+  "max_retries": 3,
+  "auto_reconnect": true
+}

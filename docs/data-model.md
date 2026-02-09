@@ -28,6 +28,8 @@ exp.policies             ← Named policies
 exp.policy_versions      ← Versioned policy configs linked to MLflow
 exp.prompts              ← Named prompts (conversational AI)
 exp.prompt_versions      ← Versioned prompt configs linked to prompt files
+exp.mcp_tools            ← MCP tools from configured servers
+exp.variant_tools         ← Variant → Tool assignments (many-to-many)
 exp.offline_replay_results ← Evaluation results
 ```
 
@@ -504,9 +506,216 @@ Prompt versions are referenced in variant configs via `prompt_config.prompt_vers
 
 ---
 
-## 5. Offline Evaluation
+## 5. MCP Tool Registry (Conversational AI)
 
-### 4.1 exp.offline_replay_results
+### 5.1 exp.mcp_tools
+
+MCP (Model Context Protocol) tools available for use in conversational AI projects. Tools are discovered from configured MCP servers and registered in the database for variant assignment.
+
+```sql
+-- TODO: Implement actual schema
+
+CREATE TABLE exp.mcp_tools (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name                VARCHAR(255) NOT NULL,
+                        -- Tool name (e.g., "query_database", "send_email")
+    description         TEXT,
+                        -- Human-readable tool description
+    server_name         VARCHAR(255) NOT NULL,
+                        -- MCP server name (from config/mcp_servers.json)
+                        -- Links to MCP server configuration
+    tool_schema         JSONB NOT NULL,
+                        -- Tool definition schema (MCP tool schema format)
+                        -- Includes input parameters, description, etc.
+    capabilities        JSONB NOT NULL DEFAULT '{}',
+                        -- Tool capabilities metadata
+                        -- e.g., {"requires_auth": true, "rate_limited": true}
+    status              VARCHAR(50) NOT NULL DEFAULT 'active',
+                        -- active | deprecated | unavailable
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(server_name, name)
+);
+
+-- Indexes for tool discovery queries
+CREATE INDEX idx_mcp_tools_server ON exp.mcp_tools(server_name);
+CREATE INDEX idx_mcp_tools_status ON exp.mcp_tools(status);
+CREATE INDEX idx_mcp_tools_name ON exp.mcp_tools(name);
+CREATE INDEX idx_mcp_tools_schema ON exp.mcp_tools USING GIN(tool_schema);
+```
+
+**Tool Schema Structure:**
+
+The `tool_schema` JSONB field stores the MCP tool definition schema:
+
+```json
+{
+  "name": "query_database",
+  "description": "Execute a SQL query against the database",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "SQL query to execute"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "Maximum number of rows to return",
+        "default": 100
+      }
+    },
+    "required": ["query"]
+  }
+}
+```
+
+**Capabilities Structure:**
+
+The `capabilities` JSONB field stores metadata about tool capabilities:
+
+```json
+{
+  "requires_auth": true,
+  "rate_limited": true,
+  "rate_limit_per_minute": 60,
+  "supports_streaming": false,
+  "timeout_seconds": 30
+}
+```
+
+**Tool Example:**
+
+```json
+{
+  "id": "770e8400-e29b-41d4-a716-446655440002",
+  "name": "query_database",
+  "description": "Execute SQL queries against the application database",
+  "server_name": "database_server",
+  "tool_schema": {
+    "name": "query_database",
+    "description": "Execute a SQL query against the database",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "SQL query to execute"
+        }
+      },
+      "required": ["query"]
+    }
+  },
+  "capabilities": {
+    "requires_auth": true,
+    "rate_limited": true,
+    "rate_limit_per_minute": 60
+  },
+  "status": "active"
+}
+```
+
+### 5.2 exp.variant_tools
+
+Many-to-many relationship table linking variants to available MCP tools. Each variant can have multiple tools, and each tool can be available to multiple variants.
+
+```sql
+-- TODO: Implement actual schema
+
+CREATE TABLE exp.variant_tools (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    variant_id          UUID NOT NULL REFERENCES exp.variants(id) ON DELETE CASCADE,
+    tool_id             UUID NOT NULL REFERENCES exp.mcp_tools(id) ON DELETE CASCADE,
+    enabled             BOOLEAN NOT NULL DEFAULT true,
+                        -- Whether tool is enabled for this variant
+    priority            INTEGER NOT NULL DEFAULT 0,
+                        -- Tool priority (lower = higher priority)
+                        -- Used for tool ordering in prompts
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(variant_id, tool_id)
+);
+
+-- Indexes for tool discovery queries
+CREATE INDEX idx_variant_tools_variant ON exp.variant_tools(variant_id);
+CREATE INDEX idx_variant_tools_tool ON exp.variant_tools(tool_id);
+CREATE INDEX idx_variant_tools_enabled ON exp.variant_tools(variant_id, enabled) WHERE enabled = true;
+```
+
+**Variant-Tool Relationship Example:**
+
+```json
+{
+  "variant_id": "660e8400-e29b-41d4-a716-446655440001",
+  "tool_id": "770e8400-e29b-41d4-a716-446655440002",
+  "enabled": true,
+  "priority": 0
+}
+```
+
+**Tool Discovery Query Pattern:**
+
+To discover tools available for a variant:
+
+```sql
+SELECT 
+    t.id,
+    t.name,
+    t.description,
+    t.server_name,
+    t.tool_schema,
+    t.capabilities,
+    vt.priority,
+    vt.enabled
+FROM exp.mcp_tools t
+INNER JOIN exp.variant_tools vt ON t.id = vt.tool_id
+WHERE vt.variant_id = :variant_id
+  AND vt.enabled = true
+  AND t.status = 'active'
+ORDER BY vt.priority ASC, t.name ASC;
+```
+
+**Relationships:**
+
+- **Tools to Variants**: Many-to-many via `exp.variant_tools`
+  - One tool can be available to multiple variants
+  - One variant can have multiple tools
+  - Tools are explicitly assigned to variants (not automatically inherited)
+
+- **Tools to MCP Servers**: One-to-many via `server_name`
+  - Multiple tools can come from the same MCP server
+  - `server_name` references server configuration in `config/mcp_servers.json`
+  - Tools are discovered from MCP servers and registered in database
+
+**Status Values:**
+
+| Status | Description |
+|--------|-------------|
+| `active` | Tool is available and can be assigned to variants |
+| `deprecated` | Tool is no longer recommended but still supported |
+| `unavailable` | Tool is temporarily unavailable (server down, etc.) |
+
+**Tool Registration Flow:**
+
+1. MCP server is configured in `config/mcp_servers.json`
+2. MCP client discovers tools from server
+3. Tools are registered in `exp.mcp_tools` table
+4. Tools are assigned to variants via `exp.variant_tools`
+5. Flow orchestrator includes tools in prompts for LLM access
+
+**Tool Schema Storage:**
+
+- Tool schemas are stored as JSONB for flexibility
+- Supports full MCP tool schema format
+- Enables efficient querying with GIN indexes
+- Allows schema evolution without migrations
+
+---
+
+## 6. Offline Evaluation
+
+### 6.1 exp.offline_replay_results
 
 Stores offline evaluation results.
 
@@ -544,9 +753,9 @@ CREATE INDEX idx_replay_dataset ON exp.offline_replay_results(dataset_version);
 
 ---
 
-## 5. Useful Views
+## 7. Useful Views
 
-### 5.1 Experiment Metrics View
+### 7.1 Experiment Metrics View
 
 ```sql
 -- TODO: Create as part of infra setup
@@ -564,7 +773,7 @@ JOIN exp.variants v ON v.id = m.variant_id
 JOIN exp.experiments e ON e.id = m.experiment_id;
 ```
 
-### 5.2 Active Experiments View
+### 7.2 Active Experiments View
 
 ```sql
 -- TODO: Create as part of infra setup
@@ -582,7 +791,7 @@ GROUP BY e.id;
 
 ---
 
-## 6. Entity Relationships
+## 8. Entity Relationships
 
 ```
 exp.experiments
