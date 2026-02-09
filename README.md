@@ -1,7 +1,20 @@
 # Experimentation & Model Lifecycle Platform
 
 **Purpose**  
-This repository provides the complete foundation for experimentation, model training, fine-tuning, evaluation, and deployment. It is designed for senior developers who may not have prior MLOps experience.
+This repository provides a unified foundation for experimentation, supporting both traditional ML projects (model training, fine-tuning, evaluation) and conversational AI projects (chatbots, LLM-powered assistants). It is designed for senior developers who may not have prior MLOps experience.
+
+---
+
+## Choose Your Project Type
+
+This platform supports two project types through a unified experimentation framework:
+
+| Project Type | Use Case | Execution Strategy | Quick Start |
+|--------------|----------|-------------------|-------------|
+| **Traditional ML** | Model training, fine-tuning, offline evaluation | `mlflow_model` | [Training Route](docs/routes/training-route.md) |
+| **Conversational AI** | Chatbots, LLM assistants, structured dialogues | `prompt_template` | [Conversational AI Route](docs/routes/conversational-ai-route.md) |
+
+**Not sure which to choose?** → [Choosing Project Type Guide](docs/choosing-project-type.md)
 
 ---
 
@@ -11,7 +24,9 @@ This repository provides the complete foundation for experimentation, model trai
 
 | Your Goal | Entry Point |
 |-----------|-------------|
+| **Choose project type** | [Choosing Project Type](docs/choosing-project-type.md) |
 | Learn the full system end-to-end | [Sequential Learning Path](#sequential-learning-path) |
+| Build conversational AI | [Conversational AI Route](docs/routes/conversational-ai-route.md) |
 | Work on experiments only | [Experiment Route](docs/routes/experiment-route.md) |
 | Work on event logging | [Event Logging Route](docs/routes/event-logging-route.md) |
 | Work on training/fine-tuning | [Training Route](docs/routes/training-route.md) |
@@ -45,24 +60,35 @@ Follow this order for complete understanding:
 ├── README.md                          ← You are here
 ├── docs/                              ← Core documentation
 │   ├── README.md                      ← Documentation index
+│   ├── choosing-project-type.md       ← Project type decision guide
 │   ├── architecture.md                ← System architecture
 │   ├── data-model.md                  ← PostgreSQL schema
 │   ├── experiments.md                 ← Experiment concepts
+│   ├── prompts-guide.md               ← Prompt management (Conversational AI)
+│   ├── conversation-flows.md          ← Flow orchestration (Conversational AI)
 │   ├── assignment-service.md          ← Assignment service overview
 │   ├── event-ingestion-service.md     ← Event service overview
-│   ├── mlflow-guide.md                ← MLflow usage
-│   ├── training-workflow.md           ← Training process
+│   ├── mlflow-guide.md                ← MLflow usage (ML projects)
+│   ├── training-workflow.md           ← Training process (ML projects)
 │   ├── offline-evaluation.md          ← Offline replay evaluation
 │   ├── model-promotion.md             ← Promotion lifecycle
 │   ├── mlops-concepts.md              ← MLOps primer
 │   └── routes/                        ← Parallel exploration routes
+│       ├── conversational-ai-route.md ← Conversational AI quickstart
+│       └── ...
 ├── services/                          ← Service specifications
 │   ├── assignment-service/
-│   └── event-ingestion-service/
+│   ├── event-ingestion-service/
+│   ├── prompt-service/                ← Prompt retrieval (Conversational AI)
+│   └── flow-orchestrator/             ← Conversation management (Conversational AI)
+├── prompts/                           ← Prompt template files (Conversational AI)
+├── flows/                             ← Conversation flow definitions (Conversational AI)
+├── examples/                           ← End-to-end example projects
+│   └── conversational-assistant/      ← Conversational AI example
 ├── infra/                             ← Infrastructure setup
 ├── pipelines/                         ← Pipeline specifications
-├── training/                          ← Training templates
-├── datasets/                          ← Dataset conventions
+├── training/                          ← Training templates (ML projects)
+├── datasets/                          ← Dataset conventions (ML projects)
 ├── analytics/                         ← Metabase & queries
 └── config/                            ← Configuration examples
 ```
@@ -73,10 +99,12 @@ Follow this order for complete understanding:
 
 | Component | Purpose |
 |-----------|---------|
-| PostgreSQL | Primary metadata store (experiments, events, policies) |
-| MLflow | Model registry and experiment tracking |
+| PostgreSQL | Primary metadata store (experiments, events, policies, prompts) |
+| MLflow | Model registry and experiment tracking (ML projects) |
 | Metabase | Dashboards and experiment visualisation |
-| Open-source LLMs | LLaMA, Mistral, Qwen, etc. |
+| LLM Providers | Anthropic Claude, OpenAI GPT (Conversational AI) |
+| Open-source LLMs | LLaMA, Mistral, Qwen, etc. (ML projects) |
+| Redis | Session storage for conversation flows (Conversational AI) |
 | Object Storage | S3/MinIO for datasets and ML artefacts |
 | Orchestrator | Airflow or Prefect |
 | Task Queue | Redis/worker for async jobs |
@@ -88,10 +116,13 @@ Follow this order for complete understanding:
 
 ### For New Developers
 
-1. Read [MLOps Concepts](docs/mlops-concepts.md) if unfamiliar with ML workflows
-2. **Using AI assistants?** See [AI Learning Prompts](docs/ai-learning-prompts.md) for active learning strategies
-3. Follow the [Sequential Learning Path](#sequential-learning-path)
-4. Explore dashboards in Metabase
+1. **Choose your project type**: Start with [Choosing Project Type](docs/choosing-project-type.md)
+2. **Conversational AI projects**: Follow [Conversational AI Route](docs/routes/conversational-ai-route.md)
+3. **ML projects**: Read [MLOps Concepts](docs/mlops-concepts.md) if unfamiliar with ML workflows
+4. **Using AI assistants?** See [AI Learning Prompts](docs/ai-learning-prompts.md) for active learning strategies
+5. Follow the [Sequential Learning Path](#sequential-learning-path) for complete understanding
+6. Explore dashboards in Metabase
+7. Check out [Example Projects](examples/README.md) for complete working examples
 
 ### For Experienced Developers
 

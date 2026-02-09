@@ -145,13 +145,56 @@ Result: user-123 → candidate
 
 ## 4. Variant Configuration
 
-### 4.1 Config Structure
+The variant `config` field supports a unified abstraction that works for both traditional ML projects and conversational AI projects. The system maintains full backward compatibility with the legacy format.
 
-Each variant has a `config` JSON field:
+### 4.1 Unified Config Structure
+
+The unified config format uses an `execution_strategy` field to specify how the variant should be executed:
 
 ```json
 {
-  "policy_version_id": "uuid-policy-version",
+  "execution_strategy": "mlflow_model" | "prompt_template" | "hybrid",
+  "mlflow_model": {
+    "policy_version_id": "uuid-policy-version",
+    "model_name": "planner_model"
+  },
+  "prompt_config": {
+    "prompt_version_id": "uuid-prompt-version",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "flow_config": {
+    "flow_id": "onboarding_v1",
+    "initial_state": "welcome"
+  },
+  "params": {
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }
+}
+```
+
+### 4.2 Execution Strategies
+
+| Execution Strategy | Use Case | Description |
+|-------------------|----------|-------------|
+| `mlflow_model` | Traditional ML projects | Trained models from MLflow Model Registry |
+| `prompt_template` | Conversational AI projects | Prompt templates with LLM providers |
+| `hybrid` | Combined approaches | Both ML models and prompts in same variant |
+
+**Related**: [choosing-project-type.md](choosing-project-type.md) for guidance on selecting the right strategy
+
+### 4.3 ML Model Configuration (`mlflow_model` strategy)
+
+For traditional ML projects using trained models:
+
+```json
+{
+  "execution_strategy": "mlflow_model",
+  "mlflow_model": {
+    "policy_version_id": "550e8400-e29b-41d4-a716-446655440000",
+    "model_name": "planner_model"
+  },
   "params": {
     "exploration_rate": 0.15,
     "temperature": 0.7,
@@ -160,19 +203,83 @@ Each variant has a `config` JSON field:
 }
 ```
 
-### 4.2 Key Config Fields
+**Fields:**
+- `execution_strategy`: Must be `"mlflow_model"`
+- `mlflow_model.policy_version_id`: Reference to `exp.policy_versions.id` (required)
+- `mlflow_model.model_name`: MLflow model name for reference (optional)
+- `params`: Runtime parameters for the model (optional)
 
-| Field | Purpose |
-|-------|---------|
-| `policy_version_id` | Links to `exp.policy_versions` |
-| `params` | Runtime parameters for the policy/model |
-
-### 4.3 How Config is Used
-
+**How it works:**
 1. EAS returns variant config to backend
-2. Backend extracts `policy_version_id`
+2. Backend extracts `mlflow_model.policy_version_id`
 3. Backend looks up MLflow model from policy version
 4. Backend loads model and applies `params`
+
+### 4.4 Prompt Template Configuration (`prompt_template` strategy)
+
+For conversational AI projects using prompts and flows:
+
+```json
+{
+  "execution_strategy": "prompt_template",
+  "prompt_config": {
+    "prompt_version_id": "770e8400-e29b-41d4-a716-446655440002",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "flow_config": {
+    "flow_id": "onboarding_v1",
+    "initial_state": "welcome"
+  },
+  "params": {
+    "temperature": 0.7,
+    "max_tokens": 2048
+  }
+}
+```
+
+**Fields:**
+- `execution_strategy`: Must be `"prompt_template"`
+- `prompt_config.prompt_version_id`: Reference to `exp.prompt_versions.id` (required)
+- `prompt_config.model_provider`: LLM provider (e.g., `"anthropic"`, `"openai"`) (required)
+- `prompt_config.model_name`: Model identifier (e.g., `"claude-sonnet-4.5"`) (required)
+- `flow_config.flow_id`: Conversation flow identifier (optional)
+- `flow_config.initial_state`: Starting state in flow (optional)
+- `params`: Runtime parameters for LLM calls (optional)
+
+**How it works:**
+1. EAS returns variant config to backend
+2. Backend retrieves prompt version from Prompt Service using `prompt_version_id`
+3. If `flow_config` is present, Flow Orchestrator manages conversation state
+4. Backend calls LLM API with prompt template and conversation context
+5. EIS records conversation events with experiment context
+
+**Related**: [prompts-guide.md](prompts-guide.md), [conversation-flows.md](conversation-flows.md)
+
+### 4.5 Backward Compatibility (Legacy Format)
+
+The system maintains full backward compatibility with the legacy format. Existing ML projects can continue using the old format without changes:
+
+**Legacy Format (still supported):**
+
+```json
+{
+  "policy_version_id": "uuid-policy-version",
+  "params": {
+    "exploration_rate": 0.15,
+    "temperature": 0.7
+  }
+}
+```
+
+When `execution_strategy` is omitted, the system assumes `"mlflow_model"` and treats `policy_version_id` as the legacy format. The Assignment Service automatically converts legacy configs to the unified format internally.
+
+**Migration Recommendation:**
+- New experiments should use the unified format with `execution_strategy`
+- Existing experiments can continue using legacy format
+- Migrate gradually when updating experiment configs
+
+**Related**: [migration-guide.md](migration-guide.md) for detailed migration steps
 
 ---
 
@@ -180,7 +287,78 @@ Each variant has a `config` JSON field:
 
 ### 5.1 Configuration File
 
-See [../config/experiments.example.yml](../config/experiments.example.yml):
+See [../config/experiments.example.yml](../config/experiments.example.yml) for complete examples.
+
+**ML Experiment Example (Unified Format):**
+
+```yaml
+experiments:
+  - name: planner_policy_exp
+    description: "Test new planner model variant"
+    unit_type: user
+    status: active
+    variants:
+      - name: control
+        allocation: 0.5
+        config:
+          execution_strategy: "mlflow_model"
+          mlflow_model:
+            policy_version_id: "uuid-v1"
+            model_name: "planner_model"
+          params:
+            temperature: 0.7
+      - name: leftovers_v2
+        allocation: 0.5
+        config:
+          execution_strategy: "mlflow_model"
+          mlflow_model:
+            policy_version_id: "uuid-v2"
+            model_name: "planner_model"
+          params:
+            exploration_rate: 0.2
+            temperature: 0.7
+```
+
+**Conversational AI Experiment Example:**
+
+```yaml
+experiments:
+  - name: chatbot_assistant_exp
+    description: "Test different prompt templates for meal planning assistant"
+    unit_type: user
+    status: active
+    variants:
+      - name: control
+        allocation: 0.5
+        config:
+          execution_strategy: "prompt_template"
+          prompt_config:
+            prompt_version_id: "uuid-prompt-v1"
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+          flow_config:
+            flow_id: "onboarding_v1"
+            initial_state: "welcome"
+          params:
+            temperature: 0.7
+            max_tokens: 2048
+      - name: concise_prompt
+        allocation: 0.5
+        config:
+          execution_strategy: "prompt_template"
+          prompt_config:
+            prompt_version_id: "uuid-prompt-v2"
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+          flow_config:
+            flow_id: "onboarding_v1"
+            initial_state: "welcome"
+          params:
+            temperature: 0.5
+            max_tokens: 1024
+```
+
+**Legacy Format (Still Supported):**
 
 ```yaml
 experiments:
@@ -291,9 +469,12 @@ variants:
 
 ## 8. Further Exploration
 
+- **Choosing your project type** → [choosing-project-type.md](choosing-project-type.md)
 - **How assignments work in detail** → [assignment-service.md](assignment-service.md)
 - **API specification** → [../services/assignment-service/API_SPEC.md](../services/assignment-service/API_SPEC.md)
 - **How events are logged** → [event-ingestion-service.md](event-ingestion-service.md)
+- **Prompt management** → [prompts-guide.md](prompts-guide.md)
+- **Conversation flows** → [conversation-flows.md](conversation-flows.md)
 
 ---
 
@@ -303,7 +484,8 @@ You will understand:
 - Experiment and variant concepts
 - The experiment lifecycle
 - How assignment logic works
-- How to configure experiments
+- How to configure experiments (both ML and conversational AI)
+- Unified config format with execution strategies
 - Common patterns and pitfalls
 
 **Next Step**: [assignment-service.md](assignment-service.md)

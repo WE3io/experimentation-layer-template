@@ -1,0 +1,119 @@
+flow:
+  name: meal_planning_flow
+  version: "1.0.0"
+  description: "Collect user preferences and generate meal plan suggestions"
+  initial_state: welcome
+  
+  states:
+    welcome:
+      type: question
+      message: "Welcome! I'm here to help you plan your meals. Let's start by learning about your preferences. What is your name?"
+      validation:
+        required: true
+        type: string
+        min_length: 2
+        max_length: 100
+        error_message: "Please enter a valid name (2-100 characters)"
+      metadata:
+        progress: 0.1
+    
+    collect_preferences:
+      type: data_collection
+      message:
+        text: "Great to meet you, {{name}}! What are your dietary preferences? (e.g., vegetarian, vegan, omnivore)"
+        quick_replies: ["vegetarian", "vegan", "omnivore", "pescatarian"]
+      validation:
+        required: true
+        type: string
+        enum: ["vegetarian", "vegan", "omnivore", "pescatarian"]
+        error_message: "Please select a dietary preference"
+      metadata:
+        progress: 0.3
+      actions:
+        - type: set_field
+          target: name
+          value: "{{user_response}}"
+    
+    collect_allergies:
+      type: question
+      message: "Do you have any food allergies or intolerances? (Enter 'none' if not applicable)"
+      validation:
+        required: true
+        type: string
+        error_message: "Please enter allergies or 'none'"
+      metadata:
+        progress: 0.5
+      actions:
+        - type: set_field
+          target: dietary_preference
+          value: "{{previous_state.user_response}}"
+    
+    collect_cuisines:
+      type: data_collection
+      message: "What are your favorite cuisines? (e.g., Italian, Mexican, Asian, etc.)"
+      validation:
+        required: false
+        type: array
+        items:
+          type: string
+        error_message: "Please enter cuisine names or leave empty"
+      metadata:
+        progress: 0.7
+      actions:
+        - type: set_field
+          target: allergies
+          value: "{{user_response}}"
+    
+    generate_plan:
+      type: ai_response
+      message: "Perfect! Let me create a personalized meal plan for you..."
+      metadata:
+        progress: 0.9
+      actions:
+        - type: set_field
+          target: favorite_cuisines
+          value: "{{user_response}}"
+        - type: log_event
+          event_type: "flow_state_entered"
+          data:
+            state: "generate_plan"
+            flow: "meal_planning_flow"
+    
+    complete:
+      type: end
+      message: "Thank you! Your meal plan has been generated. Check your messages for the full plan."
+      metadata:
+        progress: 1.0
+      actions:
+        - type: log_event
+          event_type: "flow_completed"
+          data:
+            flow: "meal_planning_flow"
+            name: "{{name}}"
+            dietary_preference: "{{dietary_preference}}"
+
+  transitions:
+    - from: welcome
+      to: collect_preferences
+      condition:
+        type: always
+    
+    - from: collect_preferences
+      to: collect_allergies
+      condition:
+        type: always
+    
+    - from: collect_allergies
+      to: collect_cuisines
+      condition:
+        type: always
+    
+    - from: collect_cuisines
+      to: generate_plan
+      condition:
+        type: always
+    
+    - from: generate_plan
+      to: complete
+      condition:
+        type: always

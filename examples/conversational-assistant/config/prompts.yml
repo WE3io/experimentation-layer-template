@@ -1,0 +1,29 @@
+# Prompt Configuration for Meal Planning Assistant Example
+# This file shows how to configure prompts for the conversational assistant example
+
+prompts:
+  - name: meal_planning_assistant
+    description: "Assistant for helping users plan meals based on preferences"
+    
+    versions:
+      - version: 1
+        description: "Initial version with basic planning"
+        file: examples/conversational-assistant/prompts/meal_planning_v1.txt
+        model_provider: anthropic
+        model_name: claude-sonnet-4.5
+        status: active
+        params:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+      
+      - version: 2
+        description: "Improved version with meal prep tips and budget considerations"
+        file: examples/conversational-assistant/prompts/meal_planning_v2.txt
+        model_provider: anthropic
+        model_name: claude-sonnet-4.5
+        status: active
+        params:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
