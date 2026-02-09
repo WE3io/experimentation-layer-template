@@ -21,14 +21,14 @@ A reviewer can read the schema design and understand the complete data model for
 
 ## Acceptance Checks
 
-- [ ] Schema design document created (location: `docs/data-model.md` new section or `infra/prompt-registry-schema.md`)
-- [ ] `exp.prompts` table structure documented (id, name, description, created_at)
-- [ ] `exp.prompt_versions` table structure documented (id, prompt_id, version, file_path, model_provider, model_name, status, params, created_at)
-- [ ] Relationships documented (prompts 1:N prompt_versions)
-- [ ] Indexes documented for common queries (by prompt name, by version, by status)
-- [ ] Links to `/prompts/` directory files documented
-- [ ] Status values documented (active, deprecated, archived)
-- [ ] Design follows pattern of `exp.policies` and `exp.policy_versions`
+- [x] Schema design document created (location: `docs/data-model.md` Section 4)
+- [x] `exp.prompts` table structure documented (id, name, description, created_at)
+- [x] `exp.prompt_versions` table structure documented (id, prompt_id, version, file_path, model_provider, model_name, status, config_defaults, created_at)
+- [x] Relationships documented (prompts 1:N prompt_versions)
+- [x] Indexes documented for common queries (by prompt_id, by status, by provider/model_name)
+- [x] Links to `/prompts/` directory files documented (file_path field)
+- [x] Status values documented (active, deprecated, archived)
+- [x] Design follows pattern of `exp.policies` and `exp.policy_versions`
 
 ## Explicit Non-Goals
 

@@ -26,6 +26,8 @@ exp.events               ← Raw event logs
 exp.metric_aggregates    ← Hourly/daily summaries
 exp.policies             ← Named policies
 exp.policy_versions      ← Versioned policy configs linked to MLflow
+exp.prompts              ← Named prompts (conversational AI)
+exp.prompt_versions      ← Versioned prompt configs linked to prompt files
 exp.offline_replay_results ← Evaluation results
 ```
 
@@ -405,7 +407,104 @@ CREATE INDEX idx_policy_versions_mlflow ON exp.policy_versions(mlflow_model_name
 
 ---
 
-## 4. Offline Evaluation
+## 4. Prompt Registry (Conversational AI)
+
+### 4.1 exp.prompts
+
+Named prompts for conversational AI projects (e.g., meal planning assistant, customer support bot).
+
+```sql
+-- TODO: Implement actual schema
+
+CREATE TABLE exp.prompts (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            VARCHAR(255) NOT NULL UNIQUE,
+    description     TEXT,
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### 4.2 exp.prompt_versions
+
+Versioned prompt configurations linked to prompt files in `/prompts/` directory.
+
+```sql
+-- TODO: Implement actual schema
+
+CREATE TABLE exp.prompt_versions (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    prompt_id           UUID NOT NULL REFERENCES exp.prompts(id),
+    version             INTEGER NOT NULL,
+    file_path           VARCHAR(500) NOT NULL,
+                        -- Path relative to repo root (e.g., "prompts/meal_planning_v1.txt")
+    model_provider      VARCHAR(100) NOT NULL,
+                        -- LLM provider: "anthropic", "openai", etc.
+    model_name          VARCHAR(255) NOT NULL,
+                        -- Model identifier: "claude-sonnet-4.5", "gpt-4", etc.
+    config_defaults     JSONB NOT NULL DEFAULT '{}',
+                        -- Default parameters (temperature, max_tokens, etc.)
+    status              VARCHAR(50) NOT NULL DEFAULT 'active',
+                        -- active | deprecated | archived
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(prompt_id, version)
+);
+
+-- Indexes
+CREATE INDEX idx_prompt_versions_prompt ON exp.prompt_versions(prompt_id);
+CREATE INDEX idx_prompt_versions_status ON exp.prompt_versions(status);
+CREATE INDEX idx_prompt_versions_provider ON exp.prompt_versions(model_provider, model_name);
+```
+
+**Prompt Version Example**:
+```json
+{
+  "prompt_id": "meal_planning_assistant",
+  "version": 1,
+  "file_path": "prompts/meal_planning_v1.txt",
+  "model_provider": "anthropic",
+  "model_name": "claude-sonnet-4.5",
+  "config_defaults": {
+    "temperature": 0.7,
+    "max_tokens": 2048
+  },
+  "status": "active"
+}
+```
+
+**Relationship to Variant Configs:**
+
+Prompt versions are referenced in variant configs via `prompt_config.prompt_version_id`:
+
+```json
+{
+  "execution_strategy": "prompt_template",
+  "prompt_config": {
+    "prompt_version_id": "uuid-prompt-version",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  }
+}
+```
+
+**File Storage:**
+
+- Prompt content is stored in `/prompts/` directory (Git versioned)
+- `file_path` field references the file relative to repository root
+- Example: `prompts/meal_planning_v1.txt`
+- Git provides version control and history for prompt content
+
+**Status Values:**
+
+| Status | Description |
+|--------|-------------|
+| `active` | Currently in use, can be assigned to variants |
+| `deprecated` | No longer recommended, but still supported |
+| `archived` | Retired, not available for new assignments |
+
+---
+
+## 5. Offline Evaluation
 
 ### 4.1 exp.offline_replay_results
 
@@ -502,7 +601,13 @@ exp.policies
             │
             └──< exp.offline_replay_results (1:N)
             │
-            └──< exp.variants.config.policy_version_id (FK reference)
+            └──< exp.variants.config.mlflow_model.policy_version_id (FK reference)
+
+exp.prompts
+    │
+    └──< exp.prompt_versions (1:N)
+            │
+            └──< exp.variants.config.prompt_config.prompt_version_id (FK reference)
 ```
 
 ---
