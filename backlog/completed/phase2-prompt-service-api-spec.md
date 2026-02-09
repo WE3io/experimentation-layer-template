@@ -20,14 +20,14 @@ A reviewer can read the API spec and understand how to call the Prompt Service t
 
 ## Acceptance Checks
 
-- [ ] File `services/prompt-service/API_SPEC.md` created
-- [ ] Base URL and authentication documented
-- [ ] Endpoint for retrieving prompt version by ID documented
-- [ ] Endpoint for listing prompts documented
-- [ ] Endpoint for listing versions of a prompt documented
-- [ ] Request/response examples included
-- [ ] Error responses documented
-- [ ] Follows same structure as Assignment Service API spec
+- [x] File `services/prompt-service/API_SPEC.md` created
+- [x] Base URL and authentication documented
+- [x] Endpoint for retrieving prompt version by ID documented
+- [x] Endpoint for listing prompts documented
+- [x] Endpoint for listing versions of a prompt documented
+- [x] Request/response examples included
+- [x] Error responses documented
+- [x] Follows same structure as Assignment Service API spec
 
 ## Explicit Non-Goals
 
