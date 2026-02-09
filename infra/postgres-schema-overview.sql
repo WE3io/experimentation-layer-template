@@ -92,14 +92,17 @@ CREATE TABLE IF NOT EXISTS exp.events (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type      VARCHAR(100) NOT NULL,
                     -- Examples: plan_generated, plan_accepted, meal_swapped
+                    -- Conversation events: conversation_started, message_sent, flow_completed, user_dropped_off
     unit_type       VARCHAR(50) NOT NULL,
     unit_id         VARCHAR(255) NOT NULL,
     experiments     JSONB NOT NULL DEFAULT '[]',
                     -- Array of {experiment_id, variant_id}
     context         JSONB NOT NULL DEFAULT '{}',
-                    -- policy_version_id, app_version, etc.
+                    -- ML events: policy_version_id, app_version, etc.
+                    -- Conversation events: session_id, flow_id, flow_version, current_state, prompt_version_id, model_provider, model_name
     metrics         JSONB NOT NULL DEFAULT '{}',
-                    -- latency_ms, token_count, etc.
+                    -- ML metrics: latency_ms, token_count, etc.
+                    -- Conversation metrics: latency_ms, token_count, turn_number, total_turns, total_duration_seconds, time_since_last_message_seconds, completion_rate
     payload         JSONB,
                     -- Event-specific data
     timestamp       TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -111,6 +114,19 @@ CREATE INDEX IF NOT EXISTS idx_events_type ON exp.events(event_type);
 CREATE INDEX IF NOT EXISTS idx_events_unit ON exp.events(unit_type, unit_id);
 CREATE INDEX IF NOT EXISTS idx_events_timestamp ON exp.events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_events_experiments ON exp.events USING GIN(experiments);
+
+-- Indexes for conversation event queries
+CREATE INDEX IF NOT EXISTS idx_events_context_session_id 
+ON exp.events ((context->>'session_id'))
+WHERE context->>'session_id' IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_events_context_flow_id 
+ON exp.events ((context->>'flow_id'))
+WHERE context->>'flow_id' IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_events_session_timestamp 
+ON exp.events ((context->>'session_id'), timestamp)
+WHERE context->>'session_id' IS NOT NULL;
 
 -- Partitioning hint (TODO: implement if needed)
 -- Consider partitioning by timestamp for large event volumes

@@ -24,6 +24,7 @@ This document specifies the required dashboards and data models for Metabase.
 | Offline vs Online | Evaluation comparison | ML team |
 | Model Quality | Quality over time | ML team |
 | Latency & Cost | Performance monitoring | Engineering |
+| Conversation Analytics | Chatbot metrics and flows | Conversational AI team |
 
 ---
 
@@ -126,7 +127,69 @@ This document specifies the required dashboards and data models for Metabase.
    - Type: Table
    - Compare last 5 model versions
 
-### 2.5 Latency & Cost Dashboard
+### 2.5 Conversation Analytics Dashboard
+
+**Purpose**: Monitor conversation flows, completion rates, and user engagement for chatbot experiments
+
+**Filters**:
+- Experiment selector (conversational AI experiments)
+- Flow selector
+- Date range
+
+**Cards**:
+
+1. **Conversation Metrics Overview**
+   - Type: Number cards
+   - Metrics: Total Conversations Started, Completion Rate, Avg Turn Count, Avg Duration
+
+2. **Completion Rate by Flow**
+   - Type: Bar chart
+   - X: Flow ID
+   - Y: Completion rate (%)
+   - Split by: Variant (optional)
+
+3. **Funnel Analysis**
+   - Type: Funnel chart
+   - Steps: conversation_started → message_sent (N turns) → flow_completed
+   - Shows drop-off at each stage
+
+4. **Turn Count Distribution**
+   - Type: Histogram
+   - X: Number of turns
+   - Y: Count of conversations
+   - Split by: Variant
+
+5. **Time to Completion**
+   - Type: Line chart
+   - X: Date
+   - Y: Average time to completion (seconds)
+   - Split by: Variant
+
+6. **Drop-off Analysis**
+   - Type: Table
+   - Columns: Flow ID, Last Active State, Drop-off Count, Drop-off Rate, Avg Progress
+
+7. **Drop-off Heatmap**
+   - Type: Heatmap
+   - X: Flow states
+   - Y: Variants
+   - Color: Drop-off rate
+
+8. **Variant Comparison Table**
+   - Columns: Variant, Completion Rate, Avg Turns, Avg Duration, Drop-off Rate
+
+9. **Conversation Events Timeline**
+   - Type: Line chart
+   - X: Time (hour of day)
+   - Y: Event count
+   - Split by: Event type (conversation_started, message_sent, flow_completed, user_dropped_off)
+
+10. **Satisfaction Scores** (if available)
+    - Type: Bar chart
+    - X: Variant
+    - Y: Average satisfaction score
+
+### 2.6 Latency & Cost Dashboard
 
 **Purpose**: Monitor system performance
 
@@ -196,9 +259,186 @@ FROM exp.metric_aggregates
 WHERE bucket_type = 'daily'
 ```
 
+**Model: Conversation Sessions**
+```sql
+SELECT
+    e.id as event_id,
+    e.event_type,
+    e.unit_id,
+    e.timestamp,
+    e.context->>'session_id' as session_id,
+    e.context->>'flow_id' as flow_id,
+    e.context->>'flow_version' as flow_version,
+    e.context->>'current_state' as current_state,
+    e.metrics->>'turn_number' as turn_number,
+    e.metrics->>'total_turns' as total_turns,
+    e.metrics->>'total_duration_seconds' as total_duration_seconds,
+    e.metrics->>'completion_rate' as completion_rate,
+    e.experiments
+FROM exp.events e
+WHERE e.event_type IN ('conversation_started', 'message_sent', 'flow_completed', 'user_dropped_off')
+```
+
+**Model: Conversation Funnel**
+```sql
+WITH conversation_events AS (
+    SELECT
+        e.context->>'session_id' as session_id,
+        e.context->>'flow_id' as flow_id,
+        e.event_type,
+        e.timestamp,
+        e.experiments->0->>'experiment_id' as experiment_id,
+        e.experiments->0->>'variant_id' as variant_id
+    FROM exp.events e
+    WHERE e.event_type IN ('conversation_started', 'message_sent', 'flow_completed', 'user_dropped_off')
+      AND e.context->>'session_id' IS NOT NULL
+)
+SELECT
+    session_id,
+    flow_id,
+    experiment_id,
+    variant_id,
+    MAX(CASE WHEN event_type = 'conversation_started' THEN timestamp END) as started_at,
+    MAX(CASE WHEN event_type = 'flow_completed' THEN timestamp END) as completed_at,
+    MAX(CASE WHEN event_type = 'user_dropped_off' THEN timestamp END) as dropped_off_at,
+    COUNT(CASE WHEN event_type = 'message_sent' THEN 1 END) as message_count,
+    CASE 
+        WHEN MAX(CASE WHEN event_type = 'flow_completed' THEN 1 END) = 1 THEN 'completed'
+        WHEN MAX(CASE WHEN event_type = 'user_dropped_off' THEN 1 END) = 1 THEN 'dropped_off'
+        ELSE 'in_progress'
+    END as status
+FROM conversation_events
+GROUP BY session_id, flow_id, experiment_id, variant_id
+```
+
+**Model: Flow Drop-off Points**
+```sql
+SELECT
+    e.context->>'flow_id' as flow_id,
+    e.context->>'current_state' as last_active_state,
+    e.experiments->0->>'variant_id' as variant_id,
+    COUNT(*) as drop_off_count,
+    AVG((e.payload->>'progress')::float) as avg_progress,
+    AVG((e.metrics->>'total_turns')::integer) as avg_turns_before_drop_off
+FROM exp.events e
+WHERE e.event_type = 'user_dropped_off'
+GROUP BY flow_id, last_active_state, variant_id
+ORDER BY drop_off_count DESC
+```
+
 ---
 
-## 4. Alerting
+## 4. Conversation Metrics
+
+### 4.1 Core Conversation Metrics
+
+**Completion Rate:**
+- Definition: Percentage of conversations that reach `flow_completed` event
+- Calculation: `COUNT(flow_completed) / COUNT(conversation_started) * 100`
+- Use case: Primary success metric for conversation flows
+
+**Average Turn Count:**
+- Definition: Average number of message exchanges per conversation
+- Calculation: `AVG(total_turns)` from `flow_completed` or `user_dropped_off` events
+- Use case: Measure conversation efficiency
+
+**Time to Completion:**
+- Definition: Average duration from `conversation_started` to `flow_completed`
+- Calculation: `AVG(total_duration_seconds)` from `flow_completed` events
+- Use case: Measure user experience and flow efficiency
+
+**Drop-off Rate:**
+- Definition: Percentage of conversations that end with `user_dropped_off`
+- Calculation: `COUNT(user_dropped_off) / COUNT(conversation_started) * 100`
+- Use case: Identify problematic flows or states
+
+**Drop-off Points:**
+- Definition: States where users most frequently drop off
+- Calculation: Group `user_dropped_off` events by `last_active_state`
+- Use case: Identify bottlenecks in conversation flows
+
+### 4.2 Funnel Analysis Setup
+
+**Purpose**: Track user progression through conversation flows
+
+**Funnel Steps**:
+1. **Started**: `conversation_started` events
+2. **Engaged**: `message_sent` events (at least 1 turn)
+3. **Progressed**: `message_sent` events (at least N turns, where N is flow-specific)
+4. **Completed**: `flow_completed` events
+
+**Metabase Funnel Configuration**:
+- Use the "Conversation Funnel" model
+- Group by: `flow_id`, `variant_id`
+- Filter by: `experiment_id`, date range
+- Calculate conversion rates between steps
+
+**Example Funnel Query**:
+```sql
+-- See "Model: Conversation Funnel" in section 3.2
+-- This model provides session-level aggregation for funnel analysis
+```
+
+### 4.3 Drop-off Analysis Setup
+
+**Purpose**: Identify where and why users abandon conversations
+
+**Key Metrics**:
+- **Drop-off Rate by State**: Percentage of users dropping off at each state
+- **Average Progress at Drop-off**: How far users got before dropping off
+- **Drop-off Reasons**: Distribution of `drop_off_reason` values
+- **Time Since Last Message**: How long users were inactive before drop-off
+
+**Metabase Configuration**:
+- Use the "Flow Drop-off Points" model
+- Create heatmap visualization:
+  - X-axis: Flow states
+  - Y-axis: Variants
+  - Color: Drop-off count or rate
+- Create table showing:
+  - Last active state
+  - Drop-off count
+  - Average progress
+  - Average turns before drop-off
+
+**Drop-off Reason Categories**:
+- `session_expired`: User inactive beyond session timeout
+- `user_inactive`: User stopped responding
+- `error`: Technical error occurred
+- `user_cancelled`: User explicitly cancelled
+
+### 4.4 Conversation Event Types Reference
+
+| Event Type | Description | Key Metrics | Key Context Fields |
+|------------|-------------|------------|-------------------|
+| `conversation_started` | User initiates conversation | - | session_id, flow_id, flow_version |
+| `message_sent` | User or bot sends message | turn_number, latency_ms, token_count | session_id, current_state |
+| `flow_completed` | User completes flow | total_turns, total_duration_seconds, completion_rate | session_id, flow_id, final_state |
+| `user_dropped_off` | User abandons conversation | total_turns, total_duration_seconds, time_since_last_message_seconds | session_id, flow_id, last_active_state |
+
+### 4.5 Variant Comparison Metrics
+
+For comparing conversation variants in A/B tests:
+
+**Primary Metrics**:
+- Completion rate (higher is better)
+- Average turn count (lower may be better, depends on flow)
+- Average time to completion (lower is better)
+- Drop-off rate (lower is better)
+
+**Secondary Metrics**:
+- Message latency (p50, p95, p99)
+- Token usage per conversation
+- User satisfaction scores (if collected)
+
+**Statistical Analysis**:
+- Use same statistical significance testing as ML experiments
+- Compare completion rates with chi-square test
+- Compare turn counts and durations with t-test or Mann-Whitney U test
+
+---
+
+## 5. Alerting
 
 ### 4.1 Required Alerts
 
@@ -239,7 +479,7 @@ alerts:
 
 ---
 
-## 5. Access Control
+## 6. Access Control
 
 ### 5.1 User Groups
 
@@ -249,10 +489,11 @@ alerts:
 | ML Team | All dashboards, can create |
 | Engineering | Latency & Cost dashboard |
 | Product | Experiment Overview only |
+| Conversational AI Team | Conversation Analytics dashboard, can create conversation dashboards |
 
 ---
 
-## 6. TODO: Implementation Checklist
+## 7. TODO: Implementation Checklist
 
 - [ ] Create PostgreSQL views
 - [ ] Set up Metabase connection
@@ -261,6 +502,10 @@ alerts:
 - [ ] Create Offline vs Online dashboard
 - [ ] Create Model Quality dashboard
 - [ ] Create Latency & Cost dashboard
+- [ ] Create Conversation Analytics dashboard
+- [ ] Create conversation metrics views/models
+- [ ] Set up funnel analysis queries
+- [ ] Set up drop-off analysis queries
 - [ ] Configure alerts
 - [ ] Set up scheduled reports
 

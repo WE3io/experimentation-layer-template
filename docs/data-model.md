@@ -274,6 +274,7 @@ CREATE TABLE exp.events (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_type      VARCHAR(100) NOT NULL,
                     -- plan_generated | plan_accepted | meal_swapped | etc.
+                    -- conversation_started | message_sent | flow_completed | user_dropped_off
     unit_type       VARCHAR(50) NOT NULL,
     unit_id         VARCHAR(255) NOT NULL,
     experiments     JSONB NOT NULL DEFAULT '[]',
@@ -315,6 +316,181 @@ CREATE INDEX idx_events_experiments ON exp.events USING GIN(experiments);
   "timestamp": "2025-01-01T10:00:00Z"
 }
 ```
+
+#### Conversation Event Types
+
+For conversational AI projects, the following event types are used to track conversation flows and user interactions:
+
+| Event Type | Description | When Fired |
+|------------|-------------|------------|
+| `conversation_started` | User initiates a new conversation | When a new conversation session begins |
+| `message_sent` | User or bot sends a message | On each message exchange in the conversation |
+| `flow_completed` | User successfully completes a conversation flow | When flow reaches a terminal/end state |
+| `user_dropped_off` | User abandons conversation without completion | When session expires or user stops responding |
+
+**Conversation Context Fields:**
+
+Conversation events include additional context fields in the `context` JSONB object:
+
+- **`session_id`** (string): Unique identifier for the conversation session
+- **`flow_id`** (string): Identifier of the conversation flow being executed
+- **`flow_version`** (string, optional): Version of the flow definition
+- **`current_state`** (string, optional): Current state in the flow state machine
+- **`prompt_version_id`** (string, UUID, optional): Reference to `exp.prompt_versions.id` if using prompt templates
+- **`model_provider`** (string, optional): LLM provider (e.g., `"anthropic"`, `"openai"`)
+- **`model_name`** (string, optional): Specific model identifier (e.g., `"claude-sonnet-4.5"`)
+
+**Conversation Event Examples:**
+
+**conversation_started:**
+```json
+{
+  "event_type": "conversation_started",
+  "unit_type": "user",
+  "unit_id": "user-123",
+  "experiments": [
+    {"experiment_id": "uuid-exp", "variant_id": "uuid-var"}
+  ],
+  "context": {
+    "session_id": "session-abc123def456",
+    "flow_id": "user_onboarding",
+    "flow_version": "1.0.0",
+    "prompt_version_id": "uuid-prompt-version",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5",
+    "app_version": "1.2.3"
+  },
+  "metrics": {},
+  "payload": {
+    "entry_point": "web_chat",
+    "referral_source": "email_campaign"
+  },
+  "timestamp": "2025-01-01T10:00:00Z"
+}
+```
+
+**message_sent:**
+```json
+{
+  "event_type": "message_sent",
+  "unit_type": "user",
+  "unit_id": "user-123",
+  "experiments": [
+    {"experiment_id": "uuid-exp", "variant_id": "uuid-var"}
+  ],
+  "context": {
+    "session_id": "session-abc123def456",
+    "flow_id": "user_onboarding",
+    "current_state": "ask_name",
+    "prompt_version_id": "uuid-prompt-version",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "metrics": {
+    "latency_ms": 850,
+    "token_count": 245,
+    "turn_number": 3
+  },
+  "payload": {
+    "sender": "user",
+    "message_text": "John Doe",
+    "message_length": 8,
+    "state_transition": true,
+    "next_state": "ask_email"
+  },
+  "timestamp": "2025-01-01T10:00:15Z"
+}
+```
+
+**flow_completed:**
+```json
+{
+  "event_type": "flow_completed",
+  "unit_type": "user",
+  "unit_id": "user-123",
+  "experiments": [
+    {"experiment_id": "uuid-exp", "variant_id": "uuid-var"}
+  ],
+  "context": {
+    "session_id": "session-abc123def456",
+    "flow_id": "user_onboarding",
+    "flow_version": "1.0.0",
+    "current_state": "complete",
+    "prompt_version_id": "uuid-prompt-version",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "metrics": {
+    "total_turns": 8,
+    "total_duration_seconds": 245,
+    "completion_rate": 1.0
+  },
+  "payload": {
+    "completion_reason": "success",
+    "final_state": "complete",
+    "data_collected": {
+      "name": "John Doe",
+      "email": "john.doe@example.com"
+    }
+  },
+  "timestamp": "2025-01-01T10:04:05Z"
+}
+```
+
+**user_dropped_off:**
+```json
+{
+  "event_type": "user_dropped_off",
+  "unit_type": "user",
+  "unit_id": "user-123",
+  "experiments": [
+    {"experiment_id": "uuid-exp", "variant_id": "uuid-var"}
+  ],
+  "context": {
+    "session_id": "session-abc123def456",
+    "flow_id": "user_onboarding",
+    "current_state": "ask_email",
+    "prompt_version_id": "uuid-prompt-version",
+    "model_provider": "anthropic",
+    "model_name": "claude-sonnet-4.5"
+  },
+  "metrics": {
+    "total_turns": 4,
+    "total_duration_seconds": 120,
+    "time_since_last_message_seconds": 300
+  },
+  "payload": {
+    "drop_off_reason": "session_expired",
+    "last_active_state": "ask_email",
+    "progress": 0.5,
+    "data_collected": {
+      "name": "John Doe"
+    }
+  },
+  "timestamp": "2025-01-01T10:05:00Z"
+}
+```
+
+**Conversation Payload Structure:**
+
+The `payload` field for conversation events contains event-specific data:
+
+- **conversation_started**: Entry point, referral source, initial context
+- **message_sent**: Message content, sender (user/bot), state transitions, turn number
+- **flow_completed**: Completion reason, final state, collected data summary
+- **user_dropped_off**: Drop-off reason, last active state, progress percentage, partial data collected
+
+**Conversation Metrics:**
+
+Common metrics tracked in the `metrics` JSONB field for conversation events:
+
+- **`latency_ms`**: Response time in milliseconds (for message_sent events)
+- **`token_count`**: Number of tokens used in LLM call
+- **`turn_number`**: Sequential turn number in the conversation
+- **`total_turns`**: Total number of turns in the conversation (for completion/drop-off events)
+- **`total_duration_seconds`**: Total conversation duration
+- **`time_since_last_message_seconds`**: Time since last user message (for drop-off detection)
+- **`completion_rate`**: Progress indicator (0.0 to 1.0)
 
 ### 2.2 exp.metric_aggregates
 

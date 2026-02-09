@@ -169,6 +169,8 @@ POST /events/batch
 
 ### 3.1 Standard Event Types
 
+**ML Experiment Events:**
+
 | Event Type | Description |
 |------------|-------------|
 | `plan_generated` | Plan was created by model |
@@ -177,6 +179,15 @@ POST /events/batch
 | `meal_swapped` | User swapped a meal |
 | `edit_applied` | User made an edit |
 | `validator_intervention` | Validator modified output |
+
+**Conversation Events:**
+
+| Event Type | Description |
+|------------|-------------|
+| `conversation_started` | User initiates a new conversation session |
+| `message_sent` | User or bot sends a message in the conversation |
+| `flow_completed` | User successfully completes a conversation flow |
+| `user_dropped_off` | User abandons conversation without completion |
 
 ### 3.2 Custom Event Types
 
@@ -289,30 +300,206 @@ curl -X POST https://api.example.com/api/v1/events \
   }'
 ```
 
+### 5.3 Conversation Started Event
+
+```bash
+curl -X POST https://api.example.com/api/v1/events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d '{
+    "event_type": "conversation_started",
+    "unit_type": "user",
+    "unit_id": "user-123",
+    "experiments": [
+      {
+        "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
+        "variant_id": "660e8400-e29b-41d4-a716-446655440001"
+      }
+    ],
+    "context": {
+      "session_id": "session-abc123def456",
+      "flow_id": "user_onboarding",
+      "flow_version": "1.0.0",
+      "prompt_version_id": "770e8400-e29b-41d4-a716-446655440002",
+      "model_provider": "anthropic",
+      "model_name": "claude-sonnet-4.5",
+      "app_version": "1.2.3"
+    },
+    "payload": {
+      "entry_point": "web_chat",
+      "referral_source": "email_campaign"
+    },
+    "timestamp": "2025-01-01T10:00:00Z"
+  }'
+```
+
+### 5.4 Message Sent Event
+
+```bash
+curl -X POST https://api.example.com/api/v1/events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d '{
+    "event_type": "message_sent",
+    "unit_type": "user",
+    "unit_id": "user-123",
+    "experiments": [
+      {
+        "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
+        "variant_id": "660e8400-e29b-41d4-a716-446655440001"
+      }
+    ],
+    "context": {
+      "session_id": "session-abc123def456",
+      "flow_id": "user_onboarding",
+      "current_state": "ask_name",
+      "prompt_version_id": "770e8400-e29b-41d4-a716-446655440002",
+      "model_provider": "anthropic",
+      "model_name": "claude-sonnet-4.5"
+    },
+    "metrics": {
+      "latency_ms": 850,
+      "token_count": 245,
+      "turn_number": 3
+    },
+    "payload": {
+      "sender": "user",
+      "message_text": "John Doe",
+      "message_length": 8,
+      "state_transition": true,
+      "next_state": "ask_email"
+    },
+    "timestamp": "2025-01-01T10:00:15Z"
+  }'
+```
+
+### 5.5 Flow Completed Event
+
+```bash
+curl -X POST https://api.example.com/api/v1/events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d '{
+    "event_type": "flow_completed",
+    "unit_type": "user",
+    "unit_id": "user-123",
+    "experiments": [
+      {
+        "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
+        "variant_id": "660e8400-e29b-41d4-a716-446655440001"
+      }
+    ],
+    "context": {
+      "session_id": "session-abc123def456",
+      "flow_id": "user_onboarding",
+      "flow_version": "1.0.0",
+      "current_state": "complete",
+      "prompt_version_id": "770e8400-e29b-41d4-a716-446655440002",
+      "model_provider": "anthropic",
+      "model_name": "claude-sonnet-4.5"
+    },
+    "metrics": {
+      "total_turns": 8,
+      "total_duration_seconds": 245,
+      "completion_rate": 1.0
+    },
+    "payload": {
+      "completion_reason": "success",
+      "final_state": "complete",
+      "data_collected": {
+        "name": "John Doe",
+        "email": "john.doe@example.com"
+      }
+    },
+    "timestamp": "2025-01-01T10:04:05Z"
+  }'
+```
+
+### 5.6 User Dropped Off Event
+
+```bash
+curl -X POST https://api.example.com/api/v1/events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -d '{
+    "event_type": "user_dropped_off",
+    "unit_type": "user",
+    "unit_id": "user-123",
+    "experiments": [
+      {
+        "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
+        "variant_id": "660e8400-e29b-41d4-a716-446655440001"
+      }
+    ],
+    "context": {
+      "session_id": "session-abc123def456",
+      "flow_id": "user_onboarding",
+      "current_state": "ask_email",
+      "prompt_version_id": "770e8400-e29b-41d4-a716-446655440002",
+      "model_provider": "anthropic",
+      "model_name": "claude-sonnet-4.5"
+    },
+    "metrics": {
+      "total_turns": 4,
+      "total_duration_seconds": 120,
+      "time_since_last_message_seconds": 300
+    },
+    "payload": {
+      "drop_off_reason": "session_expired",
+      "last_active_state": "ask_email",
+      "progress": 0.5,
+      "data_collected": {
+        "name": "John Doe"
+      }
+    },
+    "timestamp": "2025-01-01T10:05:00Z"
+  }'
+```
+
 ---
 
 ## 6. Context Fields
 
 ### 6.1 Required Context (Recommended)
 
+**For ML Events:**
+
 | Field | Type | Description |
 |-------|------|-------------|
 | `policy_version_id` | string | UUID of policy version used |
 
+**For Conversation Events:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `session_id` | string | Unique identifier for the conversation session |
+| `flow_id` | string | Identifier of the conversation flow being executed |
+
 ### 6.2 Optional Context
+
+**Common Context Fields:**
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `app_version` | string | Client application version |
 | `platform` | string | Client platform (ios, android, web) |
-| `session_id` | string | Session identifier |
 | `request_id` | string | Original request ID |
+
+**Conversation-Specific Context Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `flow_version` | string | Version of the flow definition |
+| `current_state` | string | Current state in the flow state machine |
+| `prompt_version_id` | string (UUID) | Reference to exp.prompt_versions.id if using prompt templates |
+| `model_provider` | string | LLM provider (e.g., "anthropic", "openai") |
+| `model_name` | string | Specific model identifier (e.g., "claude-sonnet-4.5", "gpt-4") |
 
 ---
 
 ## 7. Metrics Fields
 
-Common metric fields:
+### 7.1 Common Metrics (ML and Conversation Events)
 
 | Field | Type | Unit | Description |
 |-------|------|------|-------------|
@@ -322,9 +509,59 @@ Common metric fields:
 | `output_tokens` | integer | count | Output tokens |
 | `cost_usd` | float | USD | Estimated cost |
 
+### 7.2 Conversation-Specific Metrics
+
+| Field | Type | Unit | Description |
+|-------|------|------|-------------|
+| `turn_number` | integer | count | Sequential turn number in the conversation (for message_sent) |
+| `total_turns` | integer | count | Total number of turns in the conversation (for completion/drop-off events) |
+| `total_duration_seconds` | integer | seconds | Total conversation duration |
+| `time_since_last_message_seconds` | integer | seconds | Time since last user message (for drop-off detection) |
+| `completion_rate` | float | 0.0-1.0 | Progress indicator (0.0 to 1.0) |
+
 ---
 
-## 8. Best Practices
+## 8. Payload Structures
+
+### 8.1 Conversation Event Payloads
+
+**conversation_started:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `entry_point` | string | How the conversation was initiated (e.g., "web_chat", "mobile_app", "api") |
+| `referral_source` | string | Optional referral source (e.g., "email_campaign", "social_media") |
+
+**message_sent:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sender` | string | Message sender: "user" or "bot" |
+| `message_text` | string | Message content |
+| `message_length` | integer | Length of message in characters |
+| `state_transition` | boolean | Whether this message triggered a state transition |
+| `next_state` | string | Next state in flow (if state_transition is true) |
+
+**flow_completed:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `completion_reason` | string | Reason for completion (e.g., "success", "user_cancelled") |
+| `final_state` | string | Final state reached in the flow |
+| `data_collected` | object | Summary of data collected during conversation |
+
+**user_dropped_off:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `drop_off_reason` | string | Reason for drop-off (e.g., "session_expired", "user_inactive", "error") |
+| `last_active_state` | string | Last state the user was in before dropping off |
+| `progress` | float | Progress indicator (0.0 to 1.0) at time of drop-off |
+| `data_collected` | object | Partial data collected before drop-off |
+
+---
+
+## 9. Best Practices
 
 ### 8.1 Always Include Experiment Context
 
@@ -356,7 +593,7 @@ For high-volume logging, use `/events/batch`:
 
 ---
 
-## 9. SDK Examples
+## 10. SDK Examples
 
 ### 9.1 Python (Pseudo-code)
 
@@ -402,7 +639,7 @@ class EventClient:
 
 ---
 
-## 10. Related Documentation
+## 11. Related Documentation
 
 | Document | Purpose |
 |----------|---------|

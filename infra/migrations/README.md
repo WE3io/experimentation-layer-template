@@ -13,6 +13,8 @@ Migrations are numbered sequentially and include both forward and rollback scrip
 
 - `001_add_unified_variant_config_support.sql` - Adds support for unified variant config structure while maintaining backward compatibility
 - `002_add_prompt_registry.sql` - Creates exp.prompts and exp.prompt_versions tables for conversational AI prompt management
+- `003_add_mcp_tool_registry.sql` - Creates exp.mcp_tools and exp.variant_tools tables for MCP tool management
+- `004_add_conversation_event_support.sql` - Adds indexes and documentation for conversation event types (conversation_started, message_sent, flow_completed, user_dropped_off)
 
 ---
 
