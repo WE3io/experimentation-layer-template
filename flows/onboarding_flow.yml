@@ -1,0 +1,96 @@
+flow:
+  name: user_onboarding
+  version: "1.0.0"
+  description: "Collect user name and email through a guided onboarding flow"
+  initial_state: ask_name
+  
+  states:
+    ask_name:
+      type: question
+      message: "What is your name?"
+      validation:
+        required: true
+        type: string
+        min_length: 2
+        max_length: 100
+        error_message: "Name must be between 2 and 100 characters"
+      metadata:
+        progress: 0.33
+    
+    ask_email:
+      type: data_collection
+      message:
+        text: "What is your email address?"
+        quick_replies: []
+      validation:
+        required: true
+        type: email
+        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        error_message: "Please enter a valid email address"
+      metadata:
+        progress: 0.67
+      actions:
+        - type: set_field
+          target: name
+          value: "{{user_response}}"
+    
+    confirm:
+      type: confirmation
+      message:
+        text: "Is this information correct?\nName: {{name}}\nEmail: {{email}}"
+        buttons:
+          - label: "Yes, continue"
+            value: "yes"
+          - label: "No, go back"
+            value: "no"
+      metadata:
+        progress: 0.9
+    
+    complete:
+      type: end
+      message: "Thank you! Your information has been saved."
+      actions:
+        - type: log_event
+          event_type: "flow_completed"
+          data:
+            flow: "user_onboarding"
+            name: "{{name}}"
+            email: "{{email}}"
+      metadata:
+        progress: 1.0
+
+  transitions:
+    - from: ask_name
+      to: ask_email
+      condition:
+        type: always
+    
+    - from: ask_email
+      to: confirm
+      condition:
+        type: always
+      actions:
+        - type: set_field
+          target: email
+          value: "{{user_response}}"
+    
+    - from: confirm
+      to: complete
+      condition:
+        type: equals
+        field: user_response
+        value: "yes"
+    
+    - from: confirm
+      to: ask_name
+      condition:
+        type: equals
+        field: user_response
+        value: "no"
+      actions:
+        - type: set_field
+          target: name
+          value: ""
+        - type: set_field
+          target: email
+          value: ""
