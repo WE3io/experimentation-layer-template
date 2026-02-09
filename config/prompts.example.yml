@@ -1,0 +1,178 @@
+# =============================================================================
+# Prompt Configuration Example
+# =============================================================================
+# Purpose: Template for defining prompts and their versions for conversational
+#          AI projects
+#
+# Usage:
+#   Copy and modify for your prompts:
+#   cp prompts.example.yml prompts.yml
+#
+# Related:
+#   - docs/prompts-guide.md (coming in Phase 2)
+#   - docs/data-model.md section 4 (Prompt Registry)
+#   - services/prompt-service/API_SPEC.md
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Prompt Definitions
+# -----------------------------------------------------------------------------
+prompts:
+
+  # ---------------------------------------------------------------------------
+  # Meal Planning Assistant
+  # ---------------------------------------------------------------------------
+  - name: meal_planning_assistant
+    description: "Assistant for helping users plan meals based on preferences"
+    
+    versions:
+      - version: 1
+        description: "Initial version with basic planning"
+        file: prompts/meal_planning_v1.txt
+        model_provider: anthropic
+        model_name: claude-sonnet-4.5
+        status: active           # Currently in production
+        params:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+      
+      - version: 2
+        description: "Improved dietary restriction handling"
+        file: prompts/meal_planning_v2.txt
+        model_provider: anthropic
+        model_name: claude-sonnet-4.5
+        status: active           # In experiment
+        params:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+          response_format: json
+      
+      - version: 3
+        description: "Enhanced with nutrition tracking"
+        file: prompts/meal_planning_v3.txt
+        model_provider: anthropic
+        model_name: claude-opus-4
+        status: deprecated      # Still works but should migrate
+        params:
+          temperature: 0.8
+          max_tokens: 3000
+          top_p: 0.95
+
+  # ---------------------------------------------------------------------------
+  # Customer Support Bot
+  # ---------------------------------------------------------------------------
+  - name: customer_support_bot
+    description: "Customer support chatbot for handling inquiries and issues"
+    
+    versions:
+      - version: 1
+        description: "Initial customer support version"
+        file: prompts/customer_support_v1.txt
+        model_provider: anthropic
+        model_name: claude-sonnet-4.5
+        status: active
+        params:
+          temperature: 0.6      # Lower temperature for more consistent support responses
+          max_tokens: 1500
+          top_p: 0.9
+      
+      - version: 2
+        description: "Enhanced escalation handling"
+        file: prompts/customer_support_v2.txt
+        model_provider: anthropic
+        model_name: claude-sonnet-4.5
+        status: active
+        params:
+          temperature: 0.6
+          max_tokens: 2000
+          top_p: 0.9
+          response_format: json  # Structured responses for better parsing
+
+  # ---------------------------------------------------------------------------
+  # Product Recommendation Assistant
+  # ---------------------------------------------------------------------------
+  - name: product_recommendation_assistant
+    description: "Assistant for recommending products based on user preferences"
+    
+    versions:
+      - version: 1
+        description: "Initial product recommendation version"
+        file: prompts/product_recommendation_v1.txt
+        model_provider: openai
+        model_name: gpt-4
+        status: active
+        params:
+          temperature: 0.7
+          max_tokens: 2048
+          top_p: 0.95
+
+# -----------------------------------------------------------------------------
+# Configuration Notes
+# -----------------------------------------------------------------------------
+#
+# 1. Version Status:
+#    - active: Can be assigned to variants in experiments
+#    - deprecated: Still works but should migrate to newer version
+#    - archived: Retired, not available for new assignments
+#
+# 2. File Linking:
+#    - file: Path relative to repository root (e.g., "prompts/meal_planning_v1.txt")
+#    - File must exist in /prompts/ directory
+#    - File is Git versioned for history tracking
+#
+# 3. Model Provider:
+#    - anthropic: For Claude models (claude-sonnet-4.5, claude-opus-4, etc.)
+#    - openai: For GPT models (gpt-4, gpt-3.5-turbo, etc.)
+#    - Add other providers as needed
+#
+# 4. Model Name:
+#    - Specific model identifier from the provider
+#    - Examples: "claude-sonnet-4.5", "gpt-4", "gpt-3.5-turbo"
+#
+# 5. Params (Runtime Parameters):
+#    - temperature: Controls randomness (0.0-1.0, higher = more creative)
+#    - max_tokens: Maximum tokens in response
+#    - top_p: Nucleus sampling parameter
+#    - response_format: Optional, "json" for structured responses
+#    - These can be overridden at runtime by variant params
+#
+# 6. Versioning:
+#    - Versions start at 1 and increment sequentially
+#    - Each version references a different file in /prompts/
+#    - File naming: {prompt_name}_v{version}.txt
+#
+# 7. Workflow:
+#    - Create prompt file in /prompts/ directory
+#    - Add entry here with file reference
+#    - Create database records (exp.prompts, exp.prompt_versions)
+#    - Use in variant configs via prompt_version_id
+#
+# -----------------------------------------------------------------------------
+# Example: Using in Variant Config
+# -----------------------------------------------------------------------------
+#
+# In experiments.example.yml, reference prompts like this:
+#
+# variants:
+#   - name: control
+#     allocation: 0.5
+#     config:
+#       execution_strategy: prompt_template
+#       prompt_config:
+#         prompt_version_id: "770e8400-e29b-41d4-a716-446655440002"  # UUID from DB
+#         model_provider: anthropic
+#         model_name: claude-sonnet-4.5
+#       params:
+#         temperature: 0.7
+#         max_tokens: 2048
+#
+# -----------------------------------------------------------------------------
+# TODO: Implementation Notes
+# -----------------------------------------------------------------------------
+# [ ] Add schema validation
+# [ ] Add file existence verification
+# [ ] Add config loader
+# [ ] Add prompt sync script (config → database)
+# [ ] Add prompt version ID generation
