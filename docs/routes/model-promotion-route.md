@@ -1,7 +1,7 @@
 # Model Promotion Route
 
 **Purpose**  
-This route guides developers through the process of promoting models from candidate to production.
+This route guides developers through the process of promoting models from candidate to production. This route focuses on **ML projects** using trained models. For conversational AI projects, promotion involves promoting prompt versions rather than model versions—see [conversational-ai-route.md](conversational-ai-route.md) for details.
 
 ---
 
@@ -72,6 +72,7 @@ After completing this route, you will be able to:
 
 | If you want to... | Go to... |
 |-------------------|----------|
+| Promote prompt versions (conversational AI) | [conversational-ai-route.md](conversational-ai-route.md) |
 | Evaluate models first | [offline-evaluation-route.md](offline-evaluation-route.md) |
 | Train new models | [training-route.md](training-route.md) |
 | Build monitoring dashboards | [analytics-route.md](analytics-route.md) |

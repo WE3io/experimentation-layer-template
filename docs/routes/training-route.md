@@ -1,7 +1,7 @@
 # Training Route
 
 **Purpose**  
-This route guides developers who want to prepare datasets, train models, and register them in MLflow.
+This route guides developers who want to prepare datasets, train models, and register them in MLflow. This route is for **traditional ML projects** using trained models. For conversational AI projects using prompts, see [conversational-ai-route.md](conversational-ai-route.md).
 
 ---
 
@@ -77,6 +77,7 @@ After completing this route, you will be able to:
 
 | If you want to... | Go to... |
 |-------------------|----------|
+| Build conversational AI projects | [conversational-ai-route.md](conversational-ai-route.md) |
 | Evaluate trained models | [offline-evaluation-route.md](offline-evaluation-route.md) |
 | Promote models to production | [model-promotion-route.md](model-promotion-route.md) |
 | Understand event sources | [event-logging-route.md](event-logging-route.md) |

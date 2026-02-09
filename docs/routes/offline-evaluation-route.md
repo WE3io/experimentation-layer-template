@@ -1,7 +1,7 @@
 # Offline Evaluation Route
 
 **Purpose**  
-This route guides developers who want to evaluate models before deploying them to live traffic.
+This route guides developers who want to evaluate models before deploying them to live traffic. This route focuses on **ML projects** using trained models. For conversational AI projects, evaluation involves conversation replay—see [conversational-ai-route.md](conversational-ai-route.md) and [../../pipelines/conversation-replay.md](../../pipelines/conversation-replay.md).
 
 ---
 
@@ -66,6 +66,7 @@ After completing this route, you will be able to:
 
 | If you want to... | Go to... |
 |-------------------|----------|
+| Evaluate prompts/flows (conversational AI) | [conversational-ai-route.md](conversational-ai-route.md) |
 | Train models first | [training-route.md](training-route.md) |
 | Promote to production | [model-promotion-route.md](model-promotion-route.md) |
 | Build evaluation dashboards | [analytics-route.md](analytics-route.md) |

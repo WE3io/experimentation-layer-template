@@ -993,6 +993,12 @@ exp.prompts
     └──< exp.prompt_versions (1:N)
             │
             └──< exp.variants.config.prompt_config.prompt_version_id (FK reference)
+
+exp.mcp_tools
+    │
+    └──< exp.variant_tools (many-to-many via variant_tools)
+            │
+            └──< exp.variants (many-to-many via variant_tools)
 ```
 
 ---
@@ -1008,10 +1014,12 @@ exp.prompts
 ## After Completing This Document
 
 You will understand:
-- The complete PostgreSQL schema
+- The complete PostgreSQL schema (including ML and conversational AI tables)
 - How experiments, variants, and assignments relate
 - How events and metrics are stored
-- How policies link to MLflow models
+- How policies link to MLflow models (ML projects)
+- How prompts link to prompt files (conversational AI projects)
+- How MCP tools are registered and assigned to variants
 
 **Next Step**: [experiments.md](experiments.md)
 

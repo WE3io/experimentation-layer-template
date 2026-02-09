@@ -29,7 +29,7 @@ This route guides developers who want to understand and work with event logging 
 **After**: You understand internal architecture decisions.
 
 ### 3. Then: [../data-model.md](../data-model.md) (Section 2)
-**Learn**: exp.events table structure
+**Learn**: exp.events table structure (supports both ML events and conversation events)
 
 **After**: You understand how events are stored.
 
@@ -44,8 +44,9 @@ This route guides developers who want to understand and work with event logging 
 
 | Document | Purpose |
 |----------|---------|
-| [../../services/event-ingestion-service/API_SPEC.md](../../services/event-ingestion-service/API_SPEC.md) | Full API specification |
+| [../../services/event-ingestion-service/API_SPEC.md](../../services/event-ingestion-service/API_SPEC.md) | Full API specification (supports conversation events) |
 | [../../analytics/example-queries.sql](../../analytics/example-queries.sql) | Example event queries |
+| [../../analytics/conversation-analytics.sql](../../analytics/conversation-analytics.sql) | Conversation event queries (conversational AI) |
 | [../../analytics/metabase-models.md](../../analytics/metabase-models.md) | Visualising event data |
 
 ---
@@ -66,6 +67,7 @@ After completing this route, you will be able to:
 
 | If you want to... | Go to... |
 |-------------------|----------|
+| Build conversational AI projects | [conversational-ai-route.md](conversational-ai-route.md) |
 | Configure experiments | [experiment-route.md](experiment-route.md) |
 | Use events for training | [training-route.md](training-route.md) |
 | Build dashboards | [analytics-route.md](analytics-route.md) |

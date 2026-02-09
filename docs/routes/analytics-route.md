@@ -50,6 +50,7 @@ This route guides developers who want to build dashboards and analyse experiment
 | Document | Purpose |
 |----------|---------|
 | [../../pipelines/metrics-aggregation.md](../../pipelines/metrics-aggregation.md) | How metrics are computed |
+| [../../analytics/conversation-analytics.sql](../../analytics/conversation-analytics.sql) | SQL queries for conversation metrics (conversational AI) |
 | [../experiments.md](../experiments.md) | Understanding experiment structure |
 | [../model-promotion.md](../model-promotion.md) | Using analytics for promotion decisions |
 
@@ -71,6 +72,7 @@ After completing this route, you will be able to:
 
 | If you want to... | Go to... |
 |-------------------|----------|
+| Build conversational AI projects | [conversational-ai-route.md](conversational-ai-route.md) |
 | Understand experiments | [experiment-route.md](experiment-route.md) |
 | Learn about event data | [event-logging-route.md](event-logging-route.md) |
 | Promote models | [model-promotion-route.md](model-promotion-route.md) |
