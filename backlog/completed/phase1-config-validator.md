@@ -23,14 +23,14 @@ A reviewer can read the validator specification and understand:
 
 ## Acceptance Checks
 
-- [ ] Validator specification document created (location TBD: `services/assignment-service/VALIDATOR.md` or similar)
-- [ ] Validates `execution_strategy` field presence and valid values
-- [ ] Validates `mlflow_model` structure when `execution_strategy` is `"mlflow_model"`
-- [ ] Validates `prompt_config` structure when `execution_strategy` is `"prompt_template"`
-- [ ] Validates `flow_config` structure when present
-- [ ] Validates backward compatibility: accepts existing `policy_version_id` format
-- [ ] Error messages are clear and actionable
-- [ ] Validation rules documented with examples
+- [x] Validator specification document created (location: `services/assignment-service/VALIDATOR.md`)
+- [x] Validates `execution_strategy` field presence and valid values
+- [x] Validates `mlflow_model` structure when `execution_strategy` is `"mlflow_model"`
+- [x] Validates `prompt_config` structure when `execution_strategy` is `"prompt_template"`
+- [x] Validates `flow_config` structure when present
+- [x] Validates backward compatibility: accepts existing `policy_version_id` format
+- [x] Error messages are clear and actionable
+- [x] Validation rules documented with examples
 
 ## Explicit Non-Goals
 
