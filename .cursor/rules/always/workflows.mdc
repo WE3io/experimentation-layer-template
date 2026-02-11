@@ -1,0 +1,299 @@
+# Task-Specific Workflows
+
+## Scope
+This rule applies universally to all AI-assisted code generation in this project.
+
+## Purpose
+Define structured workflows for different types of development tasks to ensure consistent, high-quality AI assistance.
+
+---
+
+## Boilerplate & Glue Code
+
+### Workflow
+1. Request a brief implementation plan before generating code
+2. Generate code in small, focused pieces
+3. Always include tests immediately after code generation
+4. Review for correctness and simplicity
+5. Avoid over-engineering; prefer straightforward implementations
+
+### Examples
+
+#### Good: Simple, Focused Adapter
+```typescript
+// Simple data transformation - clear and direct
+export function mapUserToDto(user: User): UserDto {
+  return {
+    id: user.id,
+    name: user.fullName,
+    email: user.emailAddress,
+  };
+}
+```
+
+#### Avoid: Over-Engineered Solution
+```typescript
+// Unnecessary abstraction for simple mapping
+export class UserDtoMapperFactory {
+  private strategy: MappingStrategy;
+  
+  createMapper(): UserDtoMapper {
+    return new UserDtoMapper(
+      new UserDtoMapperStrategy(
+        new FieldMappingRegistry()
+      )
+    );
+  }
+}
+```
+
+### Rationale
+Boilerplate code should be simple and maintainable. Over-engineering adds complexity without value.
+
+---
+
+## Tests & Documentation
+
+### Workflow
+1. Cover success cases, failure cases, and edge cases in tests
+2. Ensure tests are accurate, clear, and maintainable
+3. Draft documentation first, then refine based on review
+4. Include examples and usage patterns in documentation
+5. Verify tests actually test the intended behavior
+
+### Examples
+
+#### Good: Comprehensive Test Coverage
+```typescript
+describe('calculateTotal', () => {
+  it('should sum positive numbers', () => {
+    expect(calculateTotal([1, 2, 3])).toBe(6);
+  });
+
+  it('should handle empty array', () => {
+    expect(calculateTotal([])).toBe(0);
+  });
+
+  it('should handle negative numbers', () => {
+    expect(calculateTotal([-1, 2, -3])).toBe(-2);
+  });
+
+  it('should throw error for null input', () => {
+    expect(() => calculateTotal(null)).toThrow();
+  });
+});
+```
+
+#### Avoid: Incomplete Test Coverage
+```typescript
+describe('calculateTotal', () => {
+  it('should work', () => {
+    expect(calculateTotal([1, 2, 3])).toBe(6);
+  });
+  // Missing edge cases: empty array, null, negative numbers
+});
+```
+
+### Rationale
+Comprehensive tests prevent regressions and document expected behavior. Missing edge cases lead to production bugs.
+
+---
+
+## Local Feature Implementation
+
+### Workflow
+1. Require clear acceptance criteria before starting
+2. Provide an implementation plan before coding
+3. Implement in small increments with tests per increment
+4. Explain complex logic clearly with comments
+5. Review explanations of complex logic before finalizing
+
+### Examples
+
+#### Good: Incremental Implementation with Tests
+```typescript
+// Step 1: Basic structure with test
+export function validateEmail(email: string): boolean {
+  if (!email) return false;
+  // Basic validation - will enhance in next step
+  return email.includes('@');
+}
+
+// Step 2: Enhanced validation with comprehensive tests
+export function validateEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+}
+```
+
+#### Avoid: Big Bang Implementation
+```typescript
+// Everything implemented at once without incremental testing
+export function validateEmail(email: string): boolean {
+  // Complex validation logic without intermediate steps
+  // No tests until the end
+  return /^(?:(?:[^<>()[\]\\.,;:\s@"]+(?:\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(?:(?:[a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(email);
+}
+```
+
+### Rationale
+Incremental implementation with tests at each step reduces risk and makes debugging easier.
+
+---
+
+## Refactoring
+
+### Workflow
+1. Specify goal and behavioral constraints upfront
+2. Provide a refactor plan before making changes
+3. Apply changes one step at a time
+4. Regenerate or update tests after each step
+5. Compare behavior with original implementation
+6. Ensure no functional changes occur during refactoring
+
+### Examples
+
+#### Good: Step-by-Step Refactoring
+```typescript
+// Original
+function processUsers(users) {
+  const result = [];
+  for (let i = 0; i < users.length; i++) {
+    if (users[i].active) {
+      result.push(users[i].name.toUpperCase());
+    }
+  }
+  return result;
+}
+
+// Step 1: Extract filtering logic (tests still pass)
+function processUsers(users) {
+  const activeUsers = users.filter(u => u.active);
+  const result = [];
+  for (let i = 0; i < activeUsers.length; i++) {
+    result.push(activeUsers[i].name.toUpperCase());
+  }
+  return result;
+}
+
+// Step 2: Extract mapping logic (tests still pass)
+function processUsers(users) {
+  return users
+    .filter(u => u.active)
+    .map(u => u.name.toUpperCase());
+}
+```
+
+#### Avoid: Refactoring Without Tests
+```typescript
+// Changed multiple things at once without verifying behavior
+function processUsers(users) {
+  return users
+    .filter(u => u.active && u.verified) // Added new condition
+    .map(u => u.name.toUpperCase())
+    .sort(); // Added sorting - changes behavior!
+}
+```
+
+### Rationale
+Refactoring must preserve behavior. Step-by-step changes with tests ensure correctness.
+
+---
+
+## Debugging
+
+### Workflow
+1. Analyze and list possible root causes before proposing fixes
+2. Provide minimal fixes with clear explanations
+3. Include new tests to prevent recurrence of the issue
+4. Explain why the fix works and what it addresses
+5. Consider related code that might have similar issues
+
+### Examples
+
+#### Good: Root Cause Analysis and Minimal Fix
+```typescript
+// Problem: Null pointer exception when user is null
+// Root causes:
+// 1. User not initialized
+// 2. User deleted but reference remains
+// 3. Race condition in async code
+
+// Minimal fix with test
+function getUserDisplayName(user: User | null): string {
+  if (!user) {
+    return 'Unknown User';
+  }
+  return user.name || 'Unnamed';
+}
+
+// Test prevents regression
+it('should handle null user', () => {
+  expect(getUserDisplayName(null)).toBe('Unknown User');
+});
+```
+
+#### Avoid: Symptom Fixing
+```typescript
+// Just adding null check without understanding root cause
+function getUserDisplayName(user: User | null): string {
+  try {
+    return user.name; // Still crashes if user.name is undefined
+  } catch (e) {
+    return 'Error';
+  }
+}
+```
+
+### Rationale
+Understanding root causes prevents similar bugs. Minimal fixes reduce risk of introducing new issues.
+
+---
+
+## Context Management
+
+Restart sessions at ~20–30 messages on complex problems. Long conversations accumulate errors and misconceptions; early mistakes compound. Fresh sessions with clear summaries outperform extended polluted context.
+
+**Reference:** [Context Pollution](../../../docs/articles/context-management/context-pollution.md)
+
+---
+
+## Context Requirements
+
+### Required Context Types
+
+When working on code, always consider and utilize:
+- **Immediate Code Context**: Relevant functions, classes, or files
+- **Local Design Context**: Module purpose and invariants
+- **Domain Rules**: Business constraints or domain concepts
+- **Non-Functional Constraints**: Performance, security, reliability, style rules
+
+### Context Bundles by Task Type
+
+**New Function:**
+- File structure and existing code patterns
+- Function signature and expected behavior
+- Coding conventions and style guidelines
+- Constraints and requirements
+
+**Modifying Behavior:**
+- Old code implementation
+- Existing tests and their expectations
+- Desired changes and rationale
+- Invariants that must be preserved
+
+**Refactoring:**
+- Current code structure
+- Motivation for refactoring
+- Constraints and requirements
+- Test coverage expectations
+
+**Debugging:**
+- Failing tests or error logs
+- Recent changes that might have introduced the issue
+- Expected vs actual behavior
+- Related code that might be affected
+
+### Rationale
+Appropriate context ensures AI generates code that fits existing patterns and constraints.

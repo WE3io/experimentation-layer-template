@@ -1,0 +1,228 @@
+# Self-Review Checklist
+
+## Scope
+This rule applies when AI needs detailed review guidance. It's fetched automatically when review-related tasks are detected.
+
+## Purpose
+Provide a comprehensive checklist for reviewing AI-generated code before submission.
+
+---
+
+## Logic Errors
+
+- [ ] All edge cases identified and handled
+- [ ] Logic is correct and matches requirements
+- [ ] Error handling is appropriate
+- [ ] Ask AI to identify potential risks if uncertain
+
+### Examples
+
+#### Good: Edge Cases Handled
+```typescript
+export function divide(a: number, b: number): number {
+  if (b === 0) {
+    throw new Error('Division by zero');
+  }
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    throw new Error('Invalid number');
+  }
+  return a / b;
+}
+```
+
+#### Avoid: Missing Edge Cases
+```typescript
+export function divide(a: number, b: number): number {
+  return a / b; // Crashes on division by zero or NaN
+}
+```
+
+---
+
+## Performance Issues
+
+- [ ] Complexity analysis provided for critical paths
+- [ ] Hot-path inefficiencies reviewed
+- [ ] Database queries optimized where applicable
+- [ ] Memory usage considered for large data operations
+
+### Examples
+
+#### Good: Performance-Conscious Code
+```typescript
+// O(n) complexity - efficient
+export function findUserById(users: User[], id: string): User | undefined {
+  return users.find(user => user.id === id);
+}
+
+// For large datasets, use Map for O(1) lookup
+export function createUserMap(users: User[]): Map<string, User> {
+  return new Map(users.map(user => [user.id, user]));
+}
+```
+
+#### Avoid: Inefficient Algorithms
+```typescript
+// O(n²) complexity - inefficient for large arrays
+export function findUsersByIds(users: User[], ids: string[]): User[] {
+  return ids.map(id => 
+    users.find(user => user.id === id) // Nested loop
+  ).filter(Boolean);
+}
+```
+
+---
+
+## Security Issues
+
+- [ ] Untrusted inputs validated and sanitized
+- [ ] No secrets or API keys in code
+- [ ] Authentication and authorization checks in place
+- [ ] Security scanning performed where relevant
+
+### Examples
+
+See security examples in `guardrails.mdc`.
+
+---
+
+## Architectural Drift
+
+- [ ] Layering constraints respected
+- [ ] No unnecessary abstractions introduced
+- [ ] Module boundaries maintained
+- [ ] Dependencies are appropriate and minimal
+
+### Examples
+
+#### Good: Respects Architecture
+```typescript
+// Service layer - business logic only
+export class UserService {
+  constructor(private userRepository: UserRepository) {}
+  
+  async createUser(data: CreateUserDto): Promise<User> {
+    // Business logic here
+    return this.userRepository.save(data);
+  }
+}
+```
+
+#### Avoid: Violates Layering
+```typescript
+// Service directly accessing database - violates architecture
+export class UserService {
+  async createUser(data: CreateUserDto): Promise<User> {
+    // Direct database access - should use repository
+    return await db.query('INSERT INTO users ...');
+  }
+}
+```
+
+---
+
+## Over-Engineering
+
+- [ ] Code is simple and readable
+- [ ] No premature optimization
+- [ ] Abstractions are justified
+- [ ] Ask AI to simplify if code seems overly complex
+
+### Examples
+
+#### Good: Simple and Clear
+```typescript
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+```
+
+#### Avoid: Over-Engineered
+```typescript
+export class DateFormatterFactory {
+  createFormatter(strategy: FormattingStrategy): DateFormatter {
+    return new DateFormatter(
+      new DateParser(),
+      new FormattingStrategyAdapter(strategy),
+      new LocaleResolver()
+    );
+  }
+}
+```
+
+---
+
+## API Misuse
+
+- [ ] Usage patterns match official documentation
+- [ ] Error handling follows API conventions
+- [ ] Rate limits and quotas considered
+- [ ] Version compatibility verified
+
+### Examples
+
+#### Good: Proper API Usage
+```typescript
+// Following API documentation patterns
+export async function fetchUser(id: string): Promise<User> {
+  try {
+    const response = await fetch(`/api/v1/users/${id}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    
+    if (!response.ok) {
+      throw new ApiError(response.status, await response.text());
+    }
+    
+    return await response.json();
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new NetworkError('Failed to fetch user', error);
+  }
+}
+```
+
+#### Avoid: Incorrect API Usage
+```typescript
+// Not following API patterns, missing error handling
+export async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(`/api/users/${id}`);
+  return response.json(); // May fail if response is not OK
+}
+```
+
+---
+
+## Failure-Mode Prevention
+
+### Common Pitfalls to Avoid
+
+1. **Missing Edge Cases**: Always consider null, empty, boundary, and error conditions
+2. **Performance Bottlenecks**: Analyze complexity, especially in loops and recursive calls
+3. **Security Vulnerabilities**: Validate inputs, avoid injection attacks, protect sensitive data
+4. **Architectural Violations**: Respect existing patterns, avoid breaking abstractions
+5. **Over-Complexity**: Prefer simple solutions; complexity should be justified
+6. **API Misunderstandings**: Verify API usage against documentation
+
+### When in Doubt
+
+- Ask for clarification rather than making assumptions
+- Provide multiple approaches with trade-offs
+- Request code review for high-risk changes
+- Break complex tasks into smaller, verifiable steps
+
+---
+
+## Reference Documentation
+
+For complete guidance on using AI coding assistants, see:
+
+Required (expected in this template):
+- `../../../docs/aca_usage_guide.md` - Full AI Coding Assistant Usage Guide
+- `../../../docs/cursor_rules_best_practices.md` - Best practices for creating rules
+
+Optional canonical references:
+- **Monorepo:** Use `../../../../../ai-blindspots/QUICK_REFERENCE.md` and `../../../../../ai-blindspots/rules/ai-coding-assistant-rules.md` when this folder lives in the full ai-assistant-rules repo.
+- **Standalone:** Use [QUICK_REFERENCE.md](https://github.com/WE3io/cursor-rules-template/blob/main/ai-blindspots/QUICK_REFERENCE.md) and [ai-coding-assistant-rules.md](https://github.com/WE3io/cursor-rules-template/blob/main/ai-blindspots/rules/ai-coding-assistant-rules.md) from the upstream repo, or copy those files into your project.

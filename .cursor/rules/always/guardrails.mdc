@@ -1,0 +1,201 @@
+# Guardrails and Constraints
+
+## Scope
+This rule applies universally to all AI-assisted code generation in this project.
+
+## Purpose
+Establish clear boundaries and constraints to prevent common pitfalls and ensure code quality.
+
+---
+
+## Scope Constraints
+
+- Only modify code explicitly requested; do not touch unrelated code
+- Do not introduce new dependencies or abstractions without explicit approval
+- State all assumptions before generating code
+- Prefer small incremental changes over large refactors
+- Do not change code style or formatting unless explicitly requested
+
+### Examples
+
+#### Good: Focused Changes
+```typescript
+// User requested: Add error handling to fetchUser
+export async function fetchUser(id: string): Promise<User> {
+  try {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new UserNotFoundError(`User ${id} not found`);
+  }
+}
+// Only modified fetchUser, didn't touch other functions
+```
+
+#### Avoid: Unrequested Changes
+```typescript
+// User requested: Add error handling to fetchUser
+export async function fetchUser(id: string): Promise<User> {
+  // ... error handling added ...
+}
+
+// But also "improved" unrelated code:
+export async function fetchPosts(userId: string): Promise<Post[]> {
+  // Changed implementation without being asked
+  return await new PostService().getAll(userId); // Introduced new dependency
+}
+```
+
+### Rationale
+Unrequested changes increase review complexity and risk introducing bugs in unrelated code.
+
+---
+
+## Behavioral Requirements
+
+- Always provide explanations for large diffs (>50 lines)
+- Work in small, reviewable increments
+- Explain differences between versions when modifying existing code
+- List edge cases and risks before implementing changes
+- Provide complexity analysis for performance-critical code
+- Never commit secrets, API keys, or sensitive data
+
+### Examples
+
+#### Good: Explanation for Large Changes
+```markdown
+## Implementation Plan
+
+Adding authentication middleware:
+- Create AuthMiddleware class (30 lines)
+- Add token validation logic (20 lines)
+- Update route handlers (15 lines)
+
+Edge cases to handle:
+- Expired tokens
+- Invalid token format
+- Missing authorization header
+
+Security considerations:
+- Token validation prevents unauthorized access
+- No secrets in code - using environment variables
+```
+
+#### Avoid: Large Changes Without Explanation
+```typescript
+// 100+ lines of code added without explanation
+// No mention of edge cases or security considerations
+class AuthMiddleware {
+  // ... complex implementation ...
+}
+```
+
+### Rationale
+Explanations help reviewers understand changes and catch issues early.
+
+---
+
+## Quality Checks
+
+- Always run automated tests after code changes
+- Use static analysis and linters before submitting code
+- Perform security scanning for code handling untrusted inputs
+- Verify code follows project style guidelines
+- Ensure backward compatibility unless explicitly breaking changes are required
+
+### Examples
+
+#### Good: Security-Conscious Code
+```typescript
+// Input validation and sanitization
+export function processUserInput(input: string): string {
+  if (!input || typeof input !== 'string') {
+    throw new ValidationError('Invalid input');
+  }
+  
+  // Sanitize to prevent XSS
+  return input
+    .trim()
+    .replace(/[<>]/g, ''); // Remove potential HTML tags
+}
+```
+
+#### Avoid: Unsafe Code
+```typescript
+// No validation, potential security issues
+export function processUserInput(input: string): string {
+  return input; // Direct use of untrusted input
+}
+```
+
+### Rationale
+Quality checks prevent bugs, security vulnerabilities, and maintainability issues.
+
+---
+
+## Prompt-Level Constraints
+
+When generating code, always include these constraints in prompts:
+
+- "Only modify the function/component X; do not touch other code."
+- "Do not introduce new dependencies or abstractions."
+- "State all assumptions before generating code."
+- "Prefer small incremental changes."
+- "Explain the approach before implementing."
+
+### Rationale
+Explicit constraints in prompts reinforce guardrails and improve AI output quality.
+
+---
+
+## Security Requirements
+
+### Never Include Secrets
+
+#### Good: Environment Variables
+```typescript
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+  throw new Error('API_KEY environment variable not set');
+}
+```
+
+#### Avoid: Hardcoded Secrets
+```typescript
+const apiKey = 'sk_live_1234567890abcdef'; // NEVER DO THIS
+```
+
+### Input Validation
+
+#### Good: Validate and Sanitize
+```typescript
+export function createUser(email: string, password: string): User {
+  // Validate input
+  if (!isValidEmail(email)) {
+    throw new ValidationError('Invalid email format');
+  }
+  
+  if (password.length < 8) {
+    throw new ValidationError('Password too short');
+  }
+  
+  // Sanitize before use
+  const sanitizedEmail = email.toLowerCase().trim();
+  
+  return userRepository.create({
+    email: sanitizedEmail,
+    passwordHash: hashPassword(password),
+  });
+}
+```
+
+#### Avoid: Trust Input
+```typescript
+export function createUser(email: string, password: string): User {
+  // No validation - security risk
+  return userRepository.create({ email, password });
+}
+```
+
+### Rationale
+Security vulnerabilities can have severe consequences. Always validate inputs and never hardcode secrets.

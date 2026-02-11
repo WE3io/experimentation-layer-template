@@ -1,0 +1,60 @@
+# Core Principles
+
+## Scope
+This rule applies universally to all AI-assisted code generation in this project.
+
+## Purpose
+AI Coding Assistants should accelerate development, improve documentation and tests, and reduce repetitive work while avoiding subtle bugs, increased review load, or architectural drift.
+
+## Core Principles
+
+- Use disciplined workflows with clear constraints
+- Maintain strong review practices
+- Work in small, reviewable increments
+- Prioritize correctness and simplicity over cleverness
+- Always consider edge cases and risks
+- Prefer static typing and type-checker feedback over intuition
+- Use stateless terminal commands (each command should be runnable independently)
+- Verify API details against authoritative docs when uncertain
+- Keep files under 64KB for reliable operation
+
+## Rationale
+These principles ensure AI assistance enhances productivity without compromising code quality or introducing technical debt.
+
+---
+
+## Task Complexity Assessment
+
+### Complexity Levels
+
+- **L1 – Local**: Limited to one or two functions/files
+- **L2 – Module**: Involves a whole feature or subsystem
+- **L3 – Cross-System**: Affects architecture, multiple services, or shared contracts
+
+### Risk Assessment by Task Type
+
+**Strong Fit** (Proceed with standard workflows):
+- Boilerplate & Glue Code (L1–L2)
+- Tests & Documentation (L1–L2)
+- Exploratory Spikes (L1–L2)
+
+**Conditional Fit** (Require explicit approval and detailed planning):
+- Local Feature Implementation (L1–L2)
+- Refactoring (L1–L2)
+- Bug Fixing & Debugging (L1–L2)
+
+**High Risk** (Always require explicit approval, detailed plans, and risk assessment):
+- Complex Feature Work (L3)
+- Architectural Design (L3)
+- Large Refactors (L3)
+
+### High-Risk Task Requirements
+
+For high-risk tasks, always:
+- Request explicit approval before proceeding
+- Provide detailed implementation plans and risk assessments
+- Suggest breaking into smaller, lower-risk increments
+- Explain architectural implications clearly
+
+## Rationale
+Complexity assessment helps match AI assistance intensity to task risk, preventing over-reliance on AI for critical architectural decisions.
