@@ -90,7 +90,7 @@ Be friendly, concise, and helpful.
 
 ### 2.4 Template Syntax (Jinja2)
 
-Prompts support template variables using **Jinja2** syntax for dynamic content.
+Prompts support template variables using **Jinja2** syntax. **Full syntax:** [Jinja2 documentation](https://jinja.palletsprojects.com/). **Examples:** [examples/conversational-assistant/](../examples/conversational-assistant/)
 
 #### Variables
 

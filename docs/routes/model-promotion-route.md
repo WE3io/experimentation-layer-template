@@ -5,6 +5,15 @@ This route guides developers through the process of promoting models from candid
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [experiments.md](../experiments.md) - Variants and allocations
+- [offline-evaluation.md](../offline-evaluation.md) - Candidate qualification
+- [data-model.md](../data-model.md) - Schema (sections 1–2, 4)
+
+---
+
 ## Route Overview
 
 ```

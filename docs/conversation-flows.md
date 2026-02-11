@@ -38,7 +38,7 @@ Conversation flows are state machines that orchestrate structured dialogues for 
 5. **Validation** ensures input correctness before transitions
 6. **Actions** execute side effects (data storage, API calls, logging)
 
-**Related**: [architecture.md](architecture.md) (section on Flow Orchestrator), [../flows/SCHEMA.md](../flows/SCHEMA.md) for complete schema
+**Related**: [architecture.md](architecture.md) (section on Flow Orchestrator), [../flows/SCHEMA.md](../flows/SCHEMA.md) for complete schema, [../examples/conversational-assistant/](../examples/conversational-assistant/) for examples
 
 ---
 
@@ -46,7 +46,7 @@ Conversation flows are state machines that orchestrate structured dialogues for 
 
 ### 2.1 Basic Flow Definition
 
-A flow is defined in YAML format:
+A flow is defined in YAML format. See [flows/SCHEMA.md](../flows/SCHEMA.md) for full schema:
 
 ```yaml
 flow:

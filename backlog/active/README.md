@@ -125,6 +125,23 @@ Cross-cutting
 
 ---
 
+## Documentation Principles Alignment
+
+Align documentation with documentation-principles (position reader, durable contracts, link over duplicate, value vs maintenance). Suggested order: 1 → 8 → 5 → 3 → 2 → 4 → 6 → 7.
+
+**Execution plan**: [DOCPRINCIPLES_EXECUTION_PLAN.md](DOCPRINCIPLES_EXECUTION_PLAN.md) – how to run these with the implementation-executor skill (one item per invocation).
+
+1. [docprinciples-fix-stale-refs.md](docprinciples-fix-stale-refs.md) - Remove outdated phase references from choosing-project-type.md
+2. [docprinciples-schema-deduplication.md](docprinciples-schema-deduplication.md) - Link data-model to canonical schema; remove inline DDL
+3. [docprinciples-archive-meta-docs.md](docprinciples-archive-meta-docs.md) - Archive or streamline DOCUMENTATION_IMPROVEMENTS and MEDIUM_PRIORITY_IMPROVEMENTS_COMPLETED
+4. [docprinciples-config-example-linking.md](docprinciples-config-example-linking.md) - Replace redundant YAML blocks with links to config/experiments.example.yml
+5. [docprinciples-add-glossary.md](docprinciples-add-glossary.md) - Create docs/glossary.md with preferred terms
+6. [docprinciples-trim-verbosity.md](docprinciples-trim-verbosity.md) - Trim narrative in mcp-integration, conversation-flows, prompts-guide
+7. [docprinciples-strengthen-navigation.md](docprinciples-strengthen-navigation.md) - Add Prerequisites to routes; verify navigation links
+8. [docprinciples-simplify-readme-file-ref.md](docprinciples-simplify-readme-file-ref.md) - Simplify or remove File Reference table in docs/README.md
+
+---
+
 ## Key References
 
 - [Repository_Evolution_Proposal.md](../Repository_Evolution_Proposal.md) - Source of truth for requirements

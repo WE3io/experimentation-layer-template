@@ -3,6 +3,8 @@
 **Purpose**  
 This directory contains all core documentation for the experimentation and model lifecycle system.
 
+**Key terms:** [glossary.md](glossary.md)
+
 ---
 
 ## Start Here If…
@@ -111,21 +113,21 @@ For developers who want to dive into specific areas:
 
 | File | Purpose |
 |------|---------|
-| `choosing-project-type.md` | Decision guide for ML vs. conversational AI |
-| `architecture.md` | System overview and component relationships |
-| `data-model.md` | PostgreSQL schema definitions |
-| `experiments.md` | Experiment concepts and configuration |
-| `assignment-service.md` | Variant assignment logic |
-| `event-ingestion-service.md` | Event logging patterns |
-| `mlflow-guide.md` | MLflow usage and conventions |
-| `training-workflow.md` | Training and fine-tuning process |
-| `offline-evaluation.md` | Replay evaluation methodology |
-| `model-promotion.md` | Promotion lifecycle |
-| `mlops-concepts.md` | Primer for developers new to MLOps |
-| `ai-learning-prompts.md` | Prompts for active learning with AI assistants |
-| `prompts-guide.md` | Prompt management and versioning for conversational AI |
-| `conversation-flows.md` | Conversation flow orchestration and state machines |
-| `mcp-integration.md` | MCP (Model Context Protocol) integration guide |
+| [choosing-project-type.md](choosing-project-type.md) | ML vs conversational AI choice |
+| [architecture.md](architecture.md) | System overview |
+| [data-model.md](data-model.md) | PostgreSQL schema |
+| [experiments.md](experiments.md) | Experiment concepts |
+| [assignment-service.md](assignment-service.md) | Variant assignment |
+| [event-ingestion-service.md](event-ingestion-service.md) | Event logging |
+| [mlflow-guide.md](mlflow-guide.md) | Model registry |
+| [training-workflow.md](training-workflow.md) | Training process |
+| [offline-evaluation.md](offline-evaluation.md) | Replay evaluation |
+| [model-promotion.md](model-promotion.md) | Promotion lifecycle |
+| [mlops-concepts.md](mlops-concepts.md) | MLOps primer |
+| [ai-learning-prompts.md](ai-learning-prompts.md) | AI-assisted learning |
+| [prompts-guide.md](prompts-guide.md) | Prompt management |
+| [conversation-flows.md](conversation-flows.md) | Flow orchestration |
+| [mcp-integration.md](mcp-integration.md) | MCP integration |
 
 ---
 

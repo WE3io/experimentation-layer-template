@@ -12,7 +12,7 @@ This guide helps you decide whether to use the traditional ML approach (`executi
 - **Understanding execution strategies** → Read this guide
 - **Already know your project type** → Skip to relevant documentation:
   - ML projects → [mlflow-guide.md](mlflow-guide.md)
-  - Conversational AI → [prompts-guide.md](prompts-guide.md) (coming in Phase 2)
+  - Conversational AI → [prompts-guide.md](prompts-guide.md)
 
 ---
 
@@ -75,6 +75,8 @@ Use the ML-focused approach when your project involves:
 
 ### Configuration Example
 
+See [config/experiments.example.yml](../config/experiments.example.yml) for complete format.
+
 ```yaml
 variants:
   - name: control
@@ -82,22 +84,17 @@ variants:
     config:
       execution_strategy: "mlflow_model"
       mlflow_model:
-        policy_version_id: "550e8400-e29b-41d4-a716-446655440000"
+        policy_version_id: "uuid"
         model_name: "planner_model"
-      params:
-        temperature: 0.7
-        exploration_rate: 0.15
-  
+      params: { temperature: 0.7 }
   - name: candidate_v2
     allocation: 0.5
     config:
       execution_strategy: "mlflow_model"
       mlflow_model:
-        policy_version_id: "660e8400-e29b-41d4-a716-446655440001"
+        policy_version_id: "uuid"
         model_name: "planner_model"
-      params:
-        temperature: 0.8
-        exploration_rate: 0.2
+      params: { temperature: 0.8 }
 ```
 
 ### Related Documentation
@@ -154,6 +151,8 @@ Use the conversational AI approach when your project involves:
 
 ### Configuration Example
 
+See [config/experiments.example.yml](../config/experiments.example.yml) for complete format.
+
 ```yaml
 variants:
   - name: control
@@ -161,7 +160,7 @@ variants:
     config:
       execution_strategy: "prompt_template"
       prompt_config:
-        prompt_version_id: "770e8400-e29b-41d4-a716-446655440002"
+        prompt_version_id: "uuid"
         model_provider: "anthropic"
         model_name: "claude-sonnet-4.5"
       flow_config:
@@ -318,8 +317,8 @@ Once you've chosen your project type:
 3. Review [experiments.md](experiments.md) for experiment configuration
 
 **For Conversational AI Projects:**
-1. Wait for [prompts-guide.md](prompts-guide.md) (Phase 2)
-2. Wait for [conversation-flows.md](conversation-flows.md) (Phase 3)
+1. Read [prompts-guide.md](prompts-guide.md)
+2. Read [conversation-flows.md](conversation-flows.md)
 3. Review [experiments.md](experiments.md) for experiment configuration
 
 **For Both:**

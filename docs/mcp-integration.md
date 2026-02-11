@@ -16,25 +16,9 @@ This document specifies the MCP (Model Context Protocol) client library wrappers
 
 ## 1. Overview
 
-### 1.1 What is MCP?
+The Model Context Protocol (MCP) is an open standard for connecting AI applications to external tools. **Protocol spec:** [modelcontextprotocol.io](https://modelcontextprotocol.io)
 
-The Model Context Protocol (MCP) is an open standard that standardizes how AI applications connect to external tools, data sources, and workflows. MCP provides:
-
-- **Standardized Interface**: Common protocol for tool discovery and invocation
-- **Client-Server Architecture**: Lightweight servers expose capabilities to AI clients
-- **Platform Agnostic**: Works with any MCP-compatible server implementation
-- **Tool Discovery**: Automatic discovery of available tools from servers
-- **Type Safety**: Structured tool schemas ensure correct usage
-
-### 1.2 Why Use MCP?
-
-MCP enables conversational AI projects to:
-
-- **Extend Capabilities**: Connect to databases, APIs, file systems, and more
-- **Standardize Integration**: Use consistent patterns across different tools
-- **Enable Experimentation**: Test different tool combinations via variant assignment
-- **Maintain Security**: Centralized tool access control and validation
-- **Simplify Development**: Pre-built servers for common use cases
+**Why use MCP here:** Extend capabilities, standardize integration, enable experimentation via variant assignment, centralize tool access.
 
 ### 1.3 Integration Layer Components
 

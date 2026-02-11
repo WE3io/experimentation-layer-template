@@ -289,75 +289,36 @@ When `execution_strategy` is omitted, the system assumes `"mlflow_model"` and tr
 
 ### 5.1 Configuration File
 
-See [../config/experiments.example.yml](../config/experiments.example.yml) for complete examples.
+**Canonical examples:** [config/experiments.example.yml](../config/experiments.example.yml)
 
-**ML Experiment Example (Unified Format):**
-
+**ML Experiment (minimal):**
 ```yaml
-experiments:
-  - name: planner_policy_exp
-    description: "Test new planner model variant"
-    unit_type: user
-    status: active
-    variants:
-      - name: control
-        allocation: 0.5
-        config:
-          execution_strategy: "mlflow_model"
-          mlflow_model:
-            policy_version_id: "uuid-v1"
-            model_name: "planner_model"
-          params:
-            temperature: 0.7
-      - name: leftovers_v2
-        allocation: 0.5
-        config:
-          execution_strategy: "mlflow_model"
-          mlflow_model:
-            policy_version_id: "uuid-v2"
-            model_name: "planner_model"
-          params:
-            exploration_rate: 0.2
-            temperature: 0.7
+variants:
+  - name: control
+    allocation: 0.5
+    config:
+      execution_strategy: "mlflow_model"
+      mlflow_model:
+        policy_version_id: "uuid-v1"
+        model_name: "planner_model"
+      params: { temperature: 0.7 }
 ```
 
-**Conversational AI Experiment Example:**
-
+**Conversational AI (minimal):**
 ```yaml
-experiments:
-  - name: chatbot_assistant_exp
-    description: "Test different prompt templates for meal planning assistant"
-    unit_type: user
-    status: active
-    variants:
-      - name: control
-        allocation: 0.5
-        config:
-          execution_strategy: "prompt_template"
-          prompt_config:
-            prompt_version_id: "uuid-prompt-v1"
-            model_provider: "anthropic"
-            model_name: "claude-sonnet-4.5"
-          flow_config:
-            flow_id: "onboarding_v1"
-            initial_state: "welcome"
-          params:
-            temperature: 0.7
-            max_tokens: 2048
-      - name: concise_prompt
-        allocation: 0.5
-        config:
-          execution_strategy: "prompt_template"
-          prompt_config:
-            prompt_version_id: "uuid-prompt-v2"
-            model_provider: "anthropic"
-            model_name: "claude-sonnet-4.5"
-          flow_config:
-            flow_id: "onboarding_v1"
-            initial_state: "welcome"
-          params:
-            temperature: 0.5
-            max_tokens: 1024
+variants:
+  - name: control
+    allocation: 0.5
+    config:
+      execution_strategy: "prompt_template"
+      prompt_config:
+        prompt_version_id: "uuid-prompt-v1"
+        model_provider: "anthropic"
+        model_name: "claude-sonnet-4.5"
+      flow_config:
+        flow_id: "onboarding_v1"
+        initial_state: "welcome"
+      params: { temperature: 0.7, max_tokens: 2048 }
 ```
 
 **Legacy Format (Still Supported):**

@@ -39,55 +39,15 @@ exp.offline_replay_results ← Evaluation results
 
 ### 1.1 exp.experiments
 
-Stores experiment definitions.
+Stores experiment definitions. Columns: id, name, description, status, unit_type, start_at, end_at, created_at, updated_at.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.experiments (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name            VARCHAR(255) NOT NULL UNIQUE,
-    description     TEXT,
-    status          VARCHAR(50) NOT NULL DEFAULT 'draft',
-                    -- draft | active | paused | completed
-    unit_type       VARCHAR(50) NOT NULL,
-                    -- user | household | session
-    start_at        TIMESTAMP WITH TIME ZONE,
-    end_at          TIMESTAMP WITH TIME ZONE,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes
-CREATE INDEX idx_experiments_status ON exp.experiments(status);
-CREATE INDEX idx_experiments_name ON exp.experiments(name);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql) | **Migrations:** [infra/migrations/README.md](../infra/migrations/README.md)
 
 ### 1.2 exp.variants
 
-Stores variants for each experiment.
+Stores variants for each experiment. Columns: id, experiment_id, name, description, allocation, config (JSONB), created_at.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.variants (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id   UUID NOT NULL REFERENCES exp.experiments(id),
-    name            VARCHAR(255) NOT NULL,
-    description     TEXT,
-    allocation      DECIMAL(5,4) NOT NULL,
-                    -- 0.0000 to 1.0000 (percentage as decimal)
-    config          JSONB NOT NULL DEFAULT '{}',
-                    -- Unified config structure supporting both ML and conversational AI
-                    -- See Config Structure section below for details
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(experiment_id, name)
-);
-
--- Indexes
-CREATE INDEX idx_variants_experiment ON exp.variants(experiment_id);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 #### Config Structure
 
@@ -238,26 +198,9 @@ When `execution_strategy` is omitted, the system automatically treats the config
 
 ### 1.3 exp.assignments
 
-Stores deterministic unit → variant mappings.
+Stores deterministic unit → variant mappings. Columns: id, experiment_id, unit_type, unit_id, variant_id, assigned_at.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.assignments (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id   UUID NOT NULL REFERENCES exp.experiments(id),
-    unit_type       VARCHAR(50) NOT NULL,
-    unit_id         VARCHAR(255) NOT NULL,
-    variant_id      UUID NOT NULL REFERENCES exp.variants(id),
-    assigned_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(experiment_id, unit_id)
-);
-
--- Indexes
-CREATE INDEX idx_assignments_unit ON exp.assignments(unit_type, unit_id);
-CREATE INDEX idx_assignments_experiment ON exp.assignments(experiment_id);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 ---
 
@@ -265,36 +208,9 @@ CREATE INDEX idx_assignments_experiment ON exp.assignments(experiment_id);
 
 ### 2.1 exp.events
 
-Atomic logs of in-product actions.
+Atomic logs of in-product actions. Columns: id, event_type, unit_type, unit_id, experiments (JSONB), context (JSONB), metrics (JSONB), payload (JSONB), timestamp, created_at.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.events (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_type      VARCHAR(100) NOT NULL,
-                    -- plan_generated | plan_accepted | meal_swapped | etc.
-                    -- conversation_started | message_sent | flow_completed | user_dropped_off
-    unit_type       VARCHAR(50) NOT NULL,
-    unit_id         VARCHAR(255) NOT NULL,
-    experiments     JSONB NOT NULL DEFAULT '[]',
-                    -- Array of {experiment_id, variant_id}
-    context         JSONB NOT NULL DEFAULT '{}',
-                    -- policy_version_id, app_version, etc.
-    metrics         JSONB NOT NULL DEFAULT '{}',
-                    -- latency_ms, token_count, etc.
-    payload         JSONB,
-                    -- Event-specific data
-    timestamp       TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes for query patterns
-CREATE INDEX idx_events_type ON exp.events(event_type);
-CREATE INDEX idx_events_unit ON exp.events(unit_type, unit_id);
-CREATE INDEX idx_events_timestamp ON exp.events(timestamp);
-CREATE INDEX idx_events_experiments ON exp.events USING GIN(experiments);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 **Event Structure Example**:
 ```json
@@ -496,33 +412,7 @@ Common metrics tracked in the `metrics` JSONB field for conversation events:
 
 Hourly/daily summaries generated by pipelines.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.metric_aggregates (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id   UUID NOT NULL REFERENCES exp.experiments(id),
-    variant_id      UUID NOT NULL REFERENCES exp.variants(id),
-    metric_name     VARCHAR(100) NOT NULL,
-    bucket_type     VARCHAR(20) NOT NULL,
-                    -- hourly | daily
-    bucket_start    TIMESTAMP WITH TIME ZONE NOT NULL,
-    count           BIGINT NOT NULL DEFAULT 0,
-    sum             DECIMAL(20,6),
-    mean            DECIMAL(20,6),
-    min             DECIMAL(20,6),
-    max             DECIMAL(20,6),
-    stddev          DECIMAL(20,6),
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(experiment_id, variant_id, metric_name, bucket_type, bucket_start)
-);
-
--- Indexes
-CREATE INDEX idx_aggregates_lookup ON exp.metric_aggregates(
-    experiment_id, variant_id, metric_name, bucket_start
-);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 ---
 
@@ -532,42 +422,13 @@ CREATE INDEX idx_aggregates_lookup ON exp.metric_aggregates(
 
 Named policies (e.g., planner policy).
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.policies (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name            VARCHAR(255) NOT NULL UNIQUE,
-    description     TEXT,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 ### 3.2 exp.policy_versions
 
 Versioned references to MLflow model versions.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.policy_versions (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    policy_id           UUID NOT NULL REFERENCES exp.policies(id),
-    version             INTEGER NOT NULL,
-    mlflow_model_name   VARCHAR(255) NOT NULL,
-    mlflow_model_version VARCHAR(50) NOT NULL,
-    config_defaults     JSONB NOT NULL DEFAULT '{}',
-    status              VARCHAR(50) NOT NULL DEFAULT 'active',
-                        -- active | deprecated | archived
-    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(policy_id, version)
-);
-
--- Indexes
-CREATE INDEX idx_policy_versions_policy ON exp.policy_versions(policy_id);
-CREATE INDEX idx_policy_versions_mlflow ON exp.policy_versions(mlflow_model_name, mlflow_model_version);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 **Policy Version Example**:
 ```json
@@ -591,48 +452,13 @@ CREATE INDEX idx_policy_versions_mlflow ON exp.policy_versions(mlflow_model_name
 
 Named prompts for conversational AI projects (e.g., meal planning assistant, customer support bot).
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.prompts (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name            VARCHAR(255) NOT NULL UNIQUE,
-    description     TEXT,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 ### 4.2 exp.prompt_versions
 
 Versioned prompt configurations linked to prompt files in `/prompts/` directory.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.prompt_versions (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    prompt_id           UUID NOT NULL REFERENCES exp.prompts(id),
-    version             INTEGER NOT NULL,
-    file_path           VARCHAR(500) NOT NULL,
-                        -- Path relative to repo root (e.g., "prompts/meal_planning_v1.txt")
-    model_provider      VARCHAR(100) NOT NULL,
-                        -- LLM provider: "anthropic", "openai", etc.
-    model_name          VARCHAR(255) NOT NULL,
-                        -- Model identifier: "claude-sonnet-4.5", "gpt-4", etc.
-    config_defaults     JSONB NOT NULL DEFAULT '{}',
-                        -- Default parameters (temperature, max_tokens, etc.)
-    status              VARCHAR(50) NOT NULL DEFAULT 'active',
-                        -- active | deprecated | archived
-    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(prompt_id, version)
-);
-
--- Indexes
-CREATE INDEX idx_prompt_versions_prompt ON exp.prompt_versions(prompt_id);
-CREATE INDEX idx_prompt_versions_status ON exp.prompt_versions(status);
-CREATE INDEX idx_prompt_versions_provider ON exp.prompt_versions(model_provider, model_name);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 **Prompt Version Example**:
 ```json
@@ -688,38 +514,7 @@ Prompt versions are referenced in variant configs via `prompt_config.prompt_vers
 
 MCP (Model Context Protocol) tools available for use in conversational AI projects. Tools are discovered from configured MCP servers and registered in the database for variant assignment.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.mcp_tools (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name                VARCHAR(255) NOT NULL,
-                        -- Tool name (e.g., "query_database", "send_email")
-    description         TEXT,
-                        -- Human-readable tool description
-    server_name         VARCHAR(255) NOT NULL,
-                        -- MCP server name (from config/mcp_servers.json)
-                        -- Links to MCP server configuration
-    tool_schema         JSONB NOT NULL,
-                        -- Tool definition schema (MCP tool schema format)
-                        -- Includes input parameters, description, etc.
-    capabilities        JSONB NOT NULL DEFAULT '{}',
-                        -- Tool capabilities metadata
-                        -- e.g., {"requires_auth": true, "rate_limited": true}
-    status              VARCHAR(50) NOT NULL DEFAULT 'active',
-                        -- active | deprecated | unavailable
-    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(server_name, name)
-);
-
--- Indexes for tool discovery queries
-CREATE INDEX idx_mcp_tools_server ON exp.mcp_tools(server_name);
-CREATE INDEX idx_mcp_tools_status ON exp.mcp_tools(status);
-CREATE INDEX idx_mcp_tools_name ON exp.mcp_tools(name);
-CREATE INDEX idx_mcp_tools_schema ON exp.mcp_tools USING GIN(tool_schema);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 **Tool Schema Structure:**
 
@@ -796,28 +591,7 @@ The `capabilities` JSONB field stores metadata about tool capabilities:
 
 Many-to-many relationship table linking variants to available MCP tools. Each variant can have multiple tools, and each tool can be available to multiple variants.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.variant_tools (
-    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    variant_id          UUID NOT NULL REFERENCES exp.variants(id) ON DELETE CASCADE,
-    tool_id             UUID NOT NULL REFERENCES exp.mcp_tools(id) ON DELETE CASCADE,
-    enabled             BOOLEAN NOT NULL DEFAULT true,
-                        -- Whether tool is enabled for this variant
-    priority            INTEGER NOT NULL DEFAULT 0,
-                        -- Tool priority (lower = higher priority)
-                        -- Used for tool ordering in prompts
-    created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    UNIQUE(variant_id, tool_id)
-);
-
--- Indexes for tool discovery queries
-CREATE INDEX idx_variant_tools_variant ON exp.variant_tools(variant_id);
-CREATE INDEX idx_variant_tools_tool ON exp.variant_tools(tool_id);
-CREATE INDEX idx_variant_tools_enabled ON exp.variant_tools(variant_id, enabled) WHERE enabled = true;
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 **Variant-Tool Relationship Example:**
 
@@ -895,75 +669,15 @@ ORDER BY vt.priority ASC, t.name ASC;
 
 Stores offline evaluation results.
 
-```sql
--- Schema definition (see infra/migrations/ for implementation)
-
-CREATE TABLE exp.offline_replay_results (
-    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    policy_version_id       UUID NOT NULL REFERENCES exp.policy_versions(id),
-    dataset_version         VARCHAR(255) NOT NULL,
-    mlflow_run_id           VARCHAR(255),
-    
-    -- Aggregate metrics
-    plan_alignment_score    DECIMAL(10,6),
-    constraint_respect_score DECIMAL(10,6),
-    edit_distance_score     DECIMAL(10,6),
-    diversity_score         DECIMAL(10,6),
-    leftovers_score         DECIMAL(10,6),
-    
-    -- Comparison
-    baseline_version_id     UUID REFERENCES exp.policy_versions(id),
-    is_better_than_baseline BOOLEAN,
-    
-    -- Status
-    status                  VARCHAR(50) NOT NULL DEFAULT 'completed',
-    error_message           TEXT,
-    
-    created_at              TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes
-CREATE INDEX idx_replay_policy ON exp.offline_replay_results(policy_version_id);
-CREATE INDEX idx_replay_dataset ON exp.offline_replay_results(dataset_version);
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 ---
 
 ## 7. Useful Views
 
-### 7.1 Experiment Metrics View
+Pre-defined views for common query patterns: `exp.v_experiment_metrics`, `exp.v_active_experiments`.
 
-```sql
--- Created as part of infrastructure setup
-
-CREATE VIEW exp.v_experiment_metrics AS
-SELECT
-    e.name AS experiment_name,
-    v.name AS variant_name,
-    m.metric_name,
-    m.mean,
-    m.count,
-    m.bucket_start
-FROM exp.metric_aggregates m
-JOIN exp.variants v ON v.id = m.variant_id
-JOIN exp.experiments e ON e.id = m.experiment_id;
-```
-
-### 7.2 Active Experiments View
-
-```sql
--- Created as part of infrastructure setup
-
-CREATE VIEW exp.v_active_experiments AS
-SELECT
-    e.*,
-    COUNT(v.id) AS variant_count,
-    SUM(v.allocation) AS total_allocation
-FROM exp.experiments e
-LEFT JOIN exp.variants v ON v.experiment_id = e.id
-WHERE e.status = 'active'
-GROUP BY e.id;
-```
+**Full DDL:** [postgres-schema-overview.sql](../infra/postgres-schema-overview.sql)
 
 ---
 
@@ -1014,9 +728,12 @@ exp.mcp_tools
 
 **See Also:**
 - [architecture.md](architecture.md) - How data model fits into system architecture
+- [assignment-service.md](assignment-service.md) - How assignments use these tables
 - [experiments.md](experiments.md) - How variant configs use these tables
 - [prompts-guide.md](prompts-guide.md) - Using prompt registry tables
 - [mcp-integration.md](mcp-integration.md) - Using MCP tool registry tables
+- [services/assignment-service/API_SPEC.md](../services/assignment-service/API_SPEC.md) - Assignment Service API
+- [services/event-ingestion-service/API_SPEC.md](../services/event-ingestion-service/API_SPEC.md) - Event Ingestion API
 
 ---
 

@@ -5,6 +5,14 @@ This route guides developers who want to build conversational AI projects (chatb
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [choosing-project-type.md](../choosing-project-type.md) - Confirm conversational AI path
+- [data-model.md](../data-model.md) - Schema (sections 1–2, 4–5)
+
+---
+
 ## Route Overview
 
 ```
@@ -128,15 +136,13 @@ EOF
 ### Step 5: Configure Your First Experiment
 **Read**: [../experiments.md](../experiments.md) (section 4.4)
 
-Create an experiment configuration:
+Create an experiment configuration. See [config/experiments.example.yml](../../config/experiments.example.yml) for complete format.
 
 ```yaml
 experiments:
   - name: assistant_prompt_exp
-    description: "Test different prompt templates"
     unit_type: user
     status: active
-    
     variants:
       - name: control
         allocation: 0.5
@@ -146,13 +152,8 @@ experiments:
             prompt_version_id: "YOUR_PROMPT_VERSION_UUID"  # From Step 3
             model_provider: "anthropic"
             model_name: "claude-sonnet-4.5"
-          flow_config:
-            flow_id: "my_onboarding"  # Optional, if using flows
-            initial_state: "welcome"
-          params:
-            temperature: 0.7
-            max_tokens: 2048
-      
+          flow_config: { flow_id: "my_onboarding", initial_state: "welcome" }
+          params: { temperature: 0.7, max_tokens: 2048 }
       - name: improved_prompt
         allocation: 0.5
         config:
@@ -161,9 +162,7 @@ experiments:
             prompt_version_id: "ANOTHER_PROMPT_VERSION_UUID"
             model_provider: "anthropic"
             model_name: "claude-sonnet-4.5"
-          params:
-            temperature: 0.7
-            max_tokens: 2048
+          params: { temperature: 0.7, max_tokens: 2048 }
 ```
 
 **After**: Your experiment is configured and ready to run.

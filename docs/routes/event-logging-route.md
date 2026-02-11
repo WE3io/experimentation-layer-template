@@ -5,6 +5,14 @@ This route guides developers who want to understand and work with event logging 
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [experiments.md](../experiments.md) - Experiment concepts and variant assignment
+- [data-model.md](../data-model.md) - Schema (section 2: events)
+
+---
+
 ## Route Overview
 
 ```

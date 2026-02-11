@@ -5,6 +5,14 @@ This route guides developers who want to understand and work with the experiment
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [data-model.md](../data-model.md) - Schema (sections 1–2)
+- [choosing-project-type.md](../choosing-project-type.md) - If starting a new project
+
+---
+
 ## Route Overview
 
 ```

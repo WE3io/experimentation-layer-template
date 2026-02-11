@@ -5,6 +5,14 @@ This route guides developers who want to evaluate models before deploying them t
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [training-workflow.md](../training-workflow.md) - Trained models in MLflow
+- [data-model.md](../data-model.md) - Schema (section 4: offline_replay_results)
+
+---
+
 ## Route Overview
 
 ```

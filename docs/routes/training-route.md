@@ -5,6 +5,14 @@ This route guides developers who want to prepare datasets, train models, and reg
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [choosing-project-type.md](../choosing-project-type.md) - Confirm ML path
+- [data-model.md](../data-model.md) - Schema (sections 1–2, 4)
+
+---
+
 ## Route Overview
 
 ```

@@ -5,6 +5,14 @@ This route guides developers who want to build dashboards and analyse experiment
 
 ---
 
+## Prerequisites
+
+- [architecture.md](../architecture.md) - System overview
+- [data-model.md](../data-model.md) - Schema (sections 2, 5)
+- [experiments.md](../experiments.md) - Experiments and variants
+
+---
+
 ## Route Overview
 
 ```
