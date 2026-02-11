@@ -7,7 +7,7 @@ This guide explains how to create, version, and manage prompts for conversationa
 
 ## Start Here If…
 
-- **Creating prompts for chatbots** → Read this guide
+- **Creating prompts for conversational AI projects** → Read this guide
 - **Understanding prompt versioning** → Read this guide
 - **Using prompts in experiments** → Read this guide
 - **Already familiar with prompts** → Skip to [conversation-flows.md](conversation-flows.md) or [experiments.md](experiments.md)
@@ -16,7 +16,7 @@ This guide explains how to create, version, and manage prompts for conversationa
 
 ## 1. Overview
 
-The prompt registry system provides versioned prompt management for conversational AI projects, similar to how MLflow manages model versions for ML projects.
+The prompt registry system provides versioned prompt management for conversational AI projects (chatbots, LLM-powered assistants, structured dialogue systems), similar to how MLflow manages model versions for ML projects.
 
 ### 1.1 Key Concepts
 
@@ -39,6 +39,8 @@ The prompt registry system provides versioned prompt management for conversation
 ---
 
 ## 2. Creating Prompts
+
+**Quick Reference:** See [Template Syntax Quick Reference](#quick-reference-template-syntax) below for Jinja2 syntax.
 
 ### 2.1 File Structure
 
@@ -421,46 +423,77 @@ Test different prompt versions in the same experiment:
 ```yaml
 experiments:
   - name: prompt_ab_test
+    description: "Compare two prompt versions for meal planning assistant"
+    unit_type: user
+    status: active
     variants:
       - name: control
+        description: "Original prompt version"
         allocation: 0.5
         config:
           execution_strategy: "prompt_template"
           prompt_config:
-            prompt_version_id: "uuid-v1"  # Original prompt
+            prompt_version_id: "550e8400-e29b-41d4-a716-446655440000"  # Replace with actual UUID
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+          params:
+            temperature: 0.7
+            max_tokens: 2048
       - name: improved
+        description: "Improved prompt with better instructions"
         allocation: 0.5
         config:
           execution_strategy: "prompt_template"
           prompt_config:
-            prompt_version_id: "uuid-v2"  # Improved prompt
+            prompt_version_id: "660e8400-e29b-41d4-a716-446655440001"  # Replace with actual UUID
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+          params:
+            temperature: 0.7
+            max_tokens: 2048
 ```
+
+**Note:** Always replace placeholder UUIDs with actual `prompt_version_id` values from your database. Verify UUIDs exist before creating experiments.
 
 ### 8.2 Gradual Rollout
 
 Gradually increase allocation for new prompt version:
 
 ```yaml
-# Week 1: 10% allocation
-variants:
-  - name: control
-    allocation: 0.9
-    config:
-      prompt_config:
-        prompt_version_id: "uuid-v1"
-  - name: new_version
-    allocation: 0.1
-    config:
-      prompt_config:
-        prompt_version_id: "uuid-v2"
+# Week 1: 10% allocation (safe start)
+experiments:
+  - name: prompt_rollout_week1
+    description: "Initial rollout of improved prompt"
+    unit_type: user
+    status: active
+    variants:
+      - name: control
+        allocation: 0.9
+        config:
+          execution_strategy: "prompt_template"
+          prompt_config:
+            prompt_version_id: "550e8400-e29b-41d4-a716-446655440000"
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
+      - name: new_version
+        allocation: 0.1  # Start small!
+        config:
+          execution_strategy: "prompt_template"
+          prompt_config:
+            prompt_version_id: "660e8400-e29b-41d4-a716-446655440001"
+            model_provider: "anthropic"
+            model_name: "claude-sonnet-4.5"
 
-# Week 2: 50% allocation (if successful)
+# Week 2: 50% allocation (if metrics look good)
+# Update the same experiment or create new one with updated allocations
 variants:
   - name: control
     allocation: 0.5
   - name: new_version
     allocation: 0.5
 ```
+
+**Best Practice:** Monitor metrics (completion rate, satisfaction, etc.) before increasing allocation. Only proceed if new version performs as well or better than control.
 
 ### 8.3 Multi-Model Testing
 
@@ -484,38 +517,141 @@ variants:
 
 ---
 
-## 9. Troubleshooting
+## 9. Common Mistakes
 
-### 9.1 Common Issues
+### 9.1 Prompt Versioning Mistakes
+
+**Mistake: Modifying prompt file without creating new version**
+
+- **Problem:** Directly editing an active prompt file breaks reproducibility
+- **Solution:** Always create a new version file (e.g., `v2.txt`) when making changes
+- **Why:** Active prompts may be in use in production experiments
+
+**Mistake: Inconsistent version numbering**
+
+- **Problem:** Skipping version numbers or using non-sequential numbers causes confusion
+- **Solution:** Always increment versions sequentially (1, 2, 3, ...)
+- **Why:** Makes it easier to track prompt evolution and rollback if needed
+
+**Mistake: Not updating database when creating new prompt file**
+
+- **Problem:** Prompt file exists but isn't registered in database, so it can't be used
+- **Solution:** Always create corresponding `exp.prompt_versions` record after creating file
+- **Why:** Prompt Service queries database, not file system directly
+
+### 9.2 Template Syntax Mistakes
+
+**Mistake: Incorrect Jinja2 variable syntax**
+
+- **Problem:** Using `{variable}` instead of `{{variable}}` or mixing syntaxes
+- **Solution:** Always use double curly braces: `{{ variable_name }}`
+- **Example:** 
+  - ❌ Wrong: `Hello {user_name}`
+  - ✅ Correct: `Hello {{ user_name }}`
+
+**Mistake: Not handling missing variables**
+
+- **Problem:** Template fails when variable is undefined
+- **Solution:** Use default filters: `{{ user_name | default('Guest') }}`
+- **Why:** Prevents template rendering errors
+
+**Mistake: Complex logic in templates**
+
+- **Problem:** Putting too much business logic in prompt templates makes them hard to maintain
+- **Solution:** Keep templates simple, do complex logic in application code
+- **Why:** Templates should focus on prompt structure, not computation
+
+### 9.3 Configuration Mistakes
+
+**Mistake: Using wrong prompt_version_id in experiment config**
+
+- **Problem:** Experiment references non-existent or wrong prompt version
+- **Solution:** Always verify UUID exists in `exp.prompt_versions` before using in config
+- **Check:** Query database: `SELECT id, version FROM exp.prompt_versions WHERE prompt_id = '...'`
+
+**Mistake: Mismatched model_provider and model_name**
+
+- **Problem:** Using OpenAI model name with Anthropic provider (or vice versa)
+- **Solution:** Verify model_provider matches the model_name's actual provider
+- **Example:** 
+  - ❌ Wrong: `model_provider: "anthropic"`, `model_name: "gpt-4"`
+  - ✅ Correct: `model_provider: "openai"`, `model_name: "gpt-4"`
+
+**Mistake: Not setting appropriate status**
+
+- **Problem:** Leaving deprecated prompts as 'active' causes confusion
+- **Solution:** Update status to 'deprecated' when new version is available
+- **Why:** Prevents accidental use of outdated prompts
+
+---
+
+## 10. Troubleshooting
+
+### 10.1 Common Issues
 
 **Issue: Prompt file not found**
 
 - **Symptom:** Prompt Service returns 404 or file not found error
 - **Solution:** Verify `file_path` in database matches actual file location
 - **Check:** File path is relative to repository root (e.g., `prompts/meal_planning_v1.txt`)
+- **Debug steps:**
+  1. Check file exists: `ls prompts/meal_planning_v1.txt`
+  2. Verify path in database: `SELECT file_path FROM exp.prompt_versions WHERE id = '...'`
+  3. Ensure no leading slash: path should be `prompts/file.txt`, not `/prompts/file.txt`
 
 **Issue: Template variables not substituted**
 
 - **Symptom:** Variables appear as `{{ variable_name }}` in output
 - **Solution:** Ensure template rendering is configured correctly
 - **Check:** Verify Jinja2 syntax is correct
+- **Debug steps:**
+  1. Check for typos in variable names
+  2. Verify variable is passed to template renderer
+  3. Test template with sample data: `render_template(prompt_content, {'variable': 'test'})`
 
 **Issue: Wrong prompt version retrieved**
 
 - **Symptom:** Different prompt content than expected
 - **Solution:** Verify `prompt_version_id` in variant config matches database
 - **Check:** Query `exp.prompt_versions` to confirm version details
+- **Debug steps:**
+  1. Get prompt version from API: `GET /api/v1/prompt-versions/{id}`
+  2. Compare returned `version` number with expected version
+  3. Check if multiple versions exist and wrong one is active
 
-### 9.2 Debugging Tips
+**Issue: Prompt content outdated**
+
+- **Symptom:** Prompt file updated but API still returns old content
+- **Solution:** Prompt Service caches file content; restart service or clear cache
+- **Check:** Verify file modification time matches expected update time
+- **Debug steps:**
+  1. Check file modification: `ls -l prompts/meal_planning_v1.txt`
+  2. Verify Git shows changes: `git log prompts/meal_planning_v1.txt`
+  3. Restart Prompt Service to reload cache
+
+**Issue: Database and file mismatch**
+
+- **Symptom:** Database record exists but file doesn't, or vice versa
+- **Solution:** Ensure both database record and file exist and match
+- **Check:** Compare `file_path` in database with actual file system
+- **Debug steps:**
+  1. List all prompt files: `ls prompts/`
+  2. Query database: `SELECT file_path FROM exp.prompt_versions`
+  3. Ensure every database record has corresponding file
+
+### 10.2 Debugging Tips
 
 - **Check file exists:** `ls prompts/meal_planning_v1.txt`
 - **Verify database record:** Query `exp.prompt_versions` for prompt version
 - **Test API:** Call Prompt Service API directly to see returned content
 - **Check Git history:** `git log prompts/meal_planning_v1.txt` to see changes
+- **Validate template syntax:** Use Jinja2 parser to check for syntax errors
+- **Compare versions:** Use `git diff prompts/meal_planning_v1.txt prompts/meal_planning_v2.txt`
+- **Check service logs:** Review Prompt Service logs for errors or warnings
 
 ---
 
-## 10. Further Exploration
+## 11. Further Exploration
 
 - **Understanding conversation flows** → [conversation-flows.md](conversation-flows.md)
 - **Using prompts in experiments** → [experiments.md](experiments.md) (section 4.4)
@@ -524,6 +660,44 @@ variants:
 - **Data model details** → [data-model.md](data-model.md) (section 4)
 - **Example prompts** → [../prompts/README.md](../prompts/README.md)
 - **Configuration examples** → [../config/prompts.example.yml](../config/prompts.example.yml)
+- **Complete example project** → [../examples/conversational-assistant/README.md](../examples/conversational-assistant/README.md)
+- **Conversational AI quickstart** → [routes/conversational-ai-route.md](routes/conversational-ai-route.md)
+
+**See Also:**
+- [choosing-project-type.md](choosing-project-type.md) - Help deciding if prompts are right for your project
+- [mcp-integration.md](mcp-integration.md) - Using MCP tools with prompts
+- [experiments.md](experiments.md) - Configuring experiments with prompts
+
+---
+
+## Quick Reference: Template Syntax
+
+### Jinja2 Variables
+- **Basic:** `{{ variable_name }}`
+- **With default:** `{{ variable_name | default('default_value') }}`
+- **With filter:** `{{ list | join(', ') }}`
+
+### Conditionals
+```jinja2
+{% if condition %}
+  content
+{% else %}
+  alternative
+{% endif %}
+```
+
+### Loops
+```jinja2
+{% for item in items %}
+  - {{ item }}
+{% endfor %}
+```
+
+### Common Filters
+- `default('value')` - Default if undefined
+- `join(', ')` - Join array with separator
+- `upper` - Convert to uppercase
+- `lower` - Convert to lowercase
 
 ---
 
@@ -535,5 +709,6 @@ You will understand:
 - How to register prompts in the database
 - How to use prompts in experiments
 - Best practices for prompt management
+- Common mistakes and how to avoid them
 
 **Next Step**: [conversation-flows.md](conversation-flows.md) or [experiments.md](experiments.md)

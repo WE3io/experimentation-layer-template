@@ -8,8 +8,10 @@ This document describes the system architecture, core components, and their rela
 ## Start Here If…
 
 - **Full sequential workflow** → Read this first, then proceed to [data-model.md](data-model.md)
+- **Starting a new project** → Start with [choosing-project-type.md](choosing-project-type.md) to choose ML or conversational AI
 - **Experimentation only** → Skip to [experiments.md](experiments.md)
-- **Training/fine-tuning** → Skip to [training-workflow.md](training-workflow.md)
+- **Building conversational AI** → See [routes/conversational-ai-route.md](routes/conversational-ai-route.md) for quickstart
+- **Training/fine-tuning models** → Skip to [training-workflow.md](training-workflow.md)
 
 ---
 
@@ -301,6 +303,13 @@ The variant `config` field supports three execution strategies:
 - **Prompt management** → [prompts-guide.md](prompts-guide.md)
 - **Conversation flows** → [conversation-flows.md](conversation-flows.md)
 - **MCP integration** → [mcp-integration.md](mcp-integration.md)
+- **Example projects** → [../examples/README.md](../examples/README.md)
+- **Conversational AI quickstart** → [routes/conversational-ai-route.md](routes/conversational-ai-route.md)
+
+**See Also:**
+- [choosing-project-type.md](choosing-project-type.md) - Help choosing between ML and conversational AI
+- [routes/experiment-route.md](routes/experiment-route.md) - Experiment-focused learning path
+- [routes/conversational-ai-route.md](routes/conversational-ai-route.md) - Conversational AI learning path
 
 ---
 

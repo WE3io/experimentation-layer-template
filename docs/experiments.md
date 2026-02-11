@@ -147,6 +147,8 @@ Result: user-123 → candidate
 
 The variant `config` field supports a unified abstraction that works for both traditional ML projects and conversational AI projects. The system maintains full backward compatibility with the legacy format.
 
+**Quick Decision:** Not sure which execution strategy to use? See [choosing-project-type.md](choosing-project-type.md) for guidance.
+
 ### 4.1 Unified Config Structure
 
 The unified config format uses an `execution_strategy` field to specify how the variant should be executed:
@@ -395,9 +397,46 @@ experiments:
 
 ---
 
-## 6. Common Patterns
+## 6. Quick Reference: Config Format
 
-### 6.1 A/B Test
+### ML Model Strategy
+```yaml
+config:
+  execution_strategy: "mlflow_model"
+  mlflow_model:
+    policy_version_id: "uuid"  # Required
+    model_name: "string"       # Optional
+  params:
+    temperature: 0.7
+```
+
+### Prompt Template Strategy
+```yaml
+config:
+  execution_strategy: "prompt_template"
+  prompt_config:
+    prompt_version_id: "uuid"  # Required
+    model_provider: "anthropic" # Required
+    model_name: "claude-sonnet-4.5" # Required
+  flow_config:                 # Optional
+    flow_id: "string"
+    initial_state: "string"
+  params:
+    temperature: 0.7
+```
+
+### Legacy Format (Still Supported)
+```yaml
+config:
+  policy_version_id: "uuid"  # Auto-converted to mlflow_model strategy
+  params: {}
+```
+
+---
+
+## 7. Common Patterns
+
+### 7.1 A/B Test
 
 Two variants, equal split:
 
@@ -409,7 +448,7 @@ variants:
     allocation: 0.5
 ```
 
-### 6.2 Gradual Rollout
+### 7.2 Gradual Rollout
 
 New feature with increasing allocation:
 
@@ -429,7 +468,7 @@ variants:
     allocation: 0.5
 ```
 
-### 6.3 Multi-Variant Test
+### 7.3 Multi-Variant Test
 
 Multiple configurations:
 
@@ -447,27 +486,135 @@ variants:
 
 ---
 
-## 7. Common Pitfalls
+## 8. Common Mistakes
 
-### 7.1 Experiment Drift
+### 8.1 Configuration Mistakes
+
+**Mistake: Wrong execution strategy for project type**
+
+- **Problem:** Using `mlflow_model` strategy for conversational AI projects or vice versa
+- **Solution:** Choose correct execution strategy based on project type:
+  - ML projects → `execution_strategy: "mlflow_model"`
+  - Conversational AI → `execution_strategy: "prompt_template"`
+- **Why:** Wrong strategy causes runtime errors or incorrect behavior
+- **Check:** Review [choosing-project-type.md](choosing-project-type.md) if unsure
+
+**Mistake: Missing required config fields**
+
+- **Problem:** Omitting required fields like `prompt_version_id` or `policy_version_id`
+- **Solution:** Always include required fields for chosen execution strategy:
+  - ML: `mlflow_model.policy_version_id` required
+  - Conversational AI: `prompt_config.prompt_version_id` required
+- **Why:** Missing fields cause variant assignment failures
+
+**Mistake: Invalid UUID references**
+
+- **Problem:** Using non-existent UUIDs for `prompt_version_id` or `policy_version_id`
+- **Solution:** Always verify UUIDs exist in database before using in config
+- **Check:** Query `exp.prompt_versions` or `exp.policy_versions` to verify
+
+**Mistake: Mismatched model provider and model name**
+
+- **Problem:** Using OpenAI model name with Anthropic provider (or vice versa)
+- **Solution:** Ensure `model_provider` matches the actual provider of `model_name`
+- **Example:**
+  - ❌ Wrong: `model_provider: "anthropic"`, `model_name: "gpt-4"`
+  - ✅ Correct: `model_provider: "openai"`, `model_name: "gpt-4"`
+
+### 8.2 Allocation Mistakes
+
+**Mistake: Allocations don't sum to 1.0**
+
+- **Problem:** Total allocation is less than or greater than 100%
+- **Solution:** Always validate allocations sum to exactly 1.0 before activation
+- **Why:** Invalid allocations cause assignment failures or unexpected behavior
+- **Check:** Sum all variant allocations: `0.5 + 0.3 + 0.2 = 1.0` ✅
+
+**Mistake: Starting with too much traffic on new variant**
+
+- **Problem:** Allocating >10% to untested variant risks user experience
+- **Solution:** Always start new variants with ≤10% allocation, increase gradually
+- **Why:** Limits impact if variant has issues
+- **Best practice:** Start at 1-5%, increase to 10%, then 25%, 50%, etc.
+
+**Mistake: Unequal allocations when not needed**
+
+- **Problem:** Using 50/50 split when one variant is clearly better
+- **Solution:** Use appropriate allocations based on confidence level
+- **Why:** Optimizes traffic allocation for better variants
+
+### 8.3 Lifecycle Mistakes
+
+**Mistake: Modifying variants after experiment starts**
+
+- **Problem:** Changing variant config breaks experiment validity
+- **Solution:** Create new experiment instead of modifying existing one
+- **Why:** Modifications invalidate statistical analysis and break determinism
+- **Alternative:** Pause experiment, create new one with updated config
+
+**Mistake: Not setting experiment end dates**
+
+- **Problem:** Experiments run indefinitely, consuming resources
+- **Solution:** Set `end_at` date when creating experiments
+- **Why:** Prevents forgotten experiments from running forever
+
+**Mistake: Activating experiments without testing**
+
+- **Problem:** Activating experiments with invalid configs causes production issues
+- **Solution:** Test experiment configs in draft status first
+- **Why:** Prevents assignment failures in production
+
+### 8.4 Event Logging Mistakes
+
+**Mistake: Missing experiment context in events**
+
+- **Problem:** Events without experiment/variant IDs can't be analyzed
+- **Solution:** Always include experiment context in events:
+  ```json
+  {
+    "event_type": "user_action",
+    "experiment_id": "uuid",
+    "variant_id": "uuid",
+    ...
+  }
+  ```
+- **Why:** Without context, events can't be attributed to variants
+
+**Mistake: Inconsistent event types**
+
+- **Problem:** Using different event type names for same action
+- **Solution:** Standardize event type naming across application
+- **Why:** Makes analytics and querying easier
+
+**Mistake: Not logging important events**
+
+- **Problem:** Missing key events makes experiment analysis incomplete
+- **Solution:** Log all user actions relevant to experiment goals
+- **Why:** Incomplete data leads to incorrect conclusions
+
+---
+
+## 9. Common Pitfalls
+
+### 9.1 Experiment Drift
 **Problem**: Modifying variants after experiment starts  
 **Solution**: Create new experiment instead
 
-### 7.2 Unequal Allocations
+### 9.2 Unequal Allocations
 **Problem**: Allocations don't sum to 1.0  
 **Solution**: Validate allocations before activation
 
-### 7.3 Premature Traffic
+### 9.3 Premature Traffic
 **Problem**: Starting with too much traffic on new variant  
 **Solution**: Always start ≤10%
 
-### 7.4 Missing Event Context
+### 9.4 Missing Event Context
 **Problem**: Events without experiment/variant IDs  
 **Solution**: Always include experiment context in events
 
 ---
 
-## 8. Further Exploration
+## 10. Further Exploration
 
 - **Choosing your project type** → [choosing-project-type.md](choosing-project-type.md)
 - **How assignments work in detail** → [assignment-service.md](assignment-service.md)
@@ -475,6 +622,9 @@ variants:
 - **How events are logged** → [event-ingestion-service.md](event-ingestion-service.md)
 - **Prompt management** → [prompts-guide.md](prompts-guide.md)
 - **Conversation flows** → [conversation-flows.md](conversation-flows.md)
+- **Example configurations** → [../config/experiments.example.yml](../config/experiments.example.yml)
+- **Example projects** → [../examples/README.md](../examples/README.md)
+- **Migration guide** → [migration-guide.md](migration-guide.md)
 
 ---
 
@@ -486,7 +636,13 @@ You will understand:
 - How assignment logic works
 - How to configure experiments (both ML and conversational AI)
 - Unified config format with execution strategies
-- Common patterns and pitfalls
+- Common patterns, mistakes, and pitfalls
+- How to avoid common configuration errors
 
 **Next Step**: [assignment-service.md](assignment-service.md)
 
+**See Also:**
+- [choosing-project-type.md](choosing-project-type.md) - Help choosing execution strategy
+- [prompts-guide.md](prompts-guide.md) - For conversational AI projects
+- [conversation-flows.md](conversation-flows.md) - For structured dialogues
+- [examples/conversational-assistant/](../examples/conversational-assistant/) - Complete example project

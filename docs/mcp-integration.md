@@ -9,7 +9,7 @@ This document specifies the MCP (Model Context Protocol) client library wrappers
 
 - **Integrating MCP servers** → Read this document
 - **Using MCP tools in flows** → Focus on Tool Discovery and Invocation sections
-- **Setting up MCP servers** → See [config/mcp_servers.example.json](../config/mcp_servers.example.json) (coming in Phase 4)
+- **Setting up MCP servers** → See [config/mcp_servers.example.json](../config/mcp_servers.example.json)
 - **Understanding tool registry** → See [data-model.md](data-model.md) section 5
 
 ---
@@ -1131,3 +1131,10 @@ You will understand:
 - How to integrate MCP tools into conversation flows
 
 **Next Step**: Configure MCP servers using `config/mcp_servers.example.json`
+
+**See Also:**
+- [conversation-flows.md](conversation-flows.md) - Using MCP tools in flow actions
+- [prompts-guide.md](prompts-guide.md) - Prompt management for conversational AI
+- [data-model.md](data-model.md) - MCP tool registry schema (section 5)
+- [experiments.md](experiments.md) - Assigning tools to variants
+- [routes/conversational-ai-route.md](routes/conversational-ai-route.md) - Complete conversational AI workflow

@@ -86,7 +86,7 @@ Complete these in order for full understanding:
     MCP integration for external tools and data sources
 
 ### Phase 5: Monitoring
-11. **[../analytics/metabase-models.md](../analytics/metabase-models.md)**  
+13. **[../analytics/metabase-models.md](../analytics/metabase-models.md)**  
     Dashboards and metrics visualisation
 
 ---
@@ -132,10 +132,12 @@ For developers who want to dive into specific areas:
 ## After Completing This Documentation
 
 You will understand:
-- How experiments control which users see which variants
-- How events flow from application to analytics
-- How models are trained, evaluated, and promoted
-- How to monitor experiment results
+- How experiments control which users see which variants (for both ML and conversational AI)
+- How events flow from application to analytics (including conversation events)
+- How models are trained, evaluated, and promoted (ML projects)
+- How prompts and flows are managed and versioned (conversational AI projects)
+- How to build chatbots and LLM assistants using the platform
+- How to monitor experiment results for both project types
 
 **Next Step**: Start with [architecture.md](architecture.md)
 

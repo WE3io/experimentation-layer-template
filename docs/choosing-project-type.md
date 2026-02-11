@@ -189,10 +189,22 @@ variants:
 
 ### Related Documentation
 
-- **[prompts-guide.md](prompts-guide.md)** - Prompt management (coming in Phase 2)
-- **[conversation-flows.md](conversation-flows.md)** - Flow orchestration (coming in Phase 3)
-- **[mcp-integration.md](mcp-integration.md)** - MCP setup (coming in Phase 4)
-- **[routes/conversational-ai-route.md](routes/conversational-ai-route.md)** - Conversational AI quick start (coming in Phase 6)
+### For Conversational AI Projects
+- **[prompts-guide.md](prompts-guide.md)** - Prompt management and versioning
+- **[conversation-flows.md](conversation-flows.md)** - Flow orchestration and state machines
+- **[mcp-integration.md](mcp-integration.md)** - MCP setup and tool integration
+- **[routes/conversational-ai-route.md](routes/conversational-ai-route.md)** - Conversational AI quick start guide
+- **[examples/conversational-assistant/](../examples/conversational-assistant/)** - Complete example project
+
+### For ML Projects
+- **[mlflow-guide.md](mlflow-guide.md)** - Model registry and versioning
+- **[training-workflow.md](training-workflow.md)** - Training and fine-tuning process
+- **[routes/training-route.md](routes/training-route.md)** - ML project quick start guide
+
+### Common to Both
+- **[experiments.md](experiments.md)** - Experiment configuration (unified abstraction)
+- **[architecture.md](architecture.md)** - System architecture overview
+- **[data-model.md](data-model.md)** - Database schema (includes both ML and conversational AI tables)
 
 ---
 
@@ -336,4 +348,11 @@ You will understand:
 - How to configure experiments for each project type
 - Where to find relevant documentation
 
-**Next Step**: Choose your project type and proceed to relevant documentation
+**Next Step**: 
+- **ML Projects** → [routes/training-route.md](routes/training-route.md) or [mlflow-guide.md](mlflow-guide.md)
+- **Conversational AI Projects** → [routes/conversational-ai-route.md](routes/conversational-ai-route.md) or [prompts-guide.md](prompts-guide.md)
+
+**See Also:**
+- [architecture.md](architecture.md) - System overview showing both paths
+- [experiments.md](experiments.md) - Unified experiment configuration
+- [examples/README.md](../examples/README.md) - Example projects for both types

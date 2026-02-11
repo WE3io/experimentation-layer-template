@@ -7,7 +7,7 @@ This guide explains how to create and manage conversation flows for structured d
 
 ## Start Here If…
 
-- **Creating chatbots or conversational interfaces** → Read this guide
+- **Creating conversation flows for conversational AI projects** → Read this guide
 - **Understanding flow orchestration** → Read this guide
 - **Designing structured dialogues** → Read this guide
 - **Already familiar with flows** → Skip to [experiments.md](experiments.md) or [prompts-guide.md](prompts-guide.md)
@@ -618,49 +618,138 @@ curl -X POST "https://api.example.com/api/v1/conversations/{session_id}/messages
 Allow users to go back and correct information:
 
 ```yaml
-states:
-  collect_info:
-    type: data_collection
-    message: "Enter your information"
-  confirm:
-    type: confirmation
-    message: "Is this correct?"
-  complete:
-    type: end
+flow:
+  name: data_collection_with_confirmation
+  version: "1.0.0"
+  description: "Collect user info with confirmation step"
+  initial_state: collect_info
+  
+  states:
+    collect_info:
+      type: data_collection
+      message: "Please enter your name and email"
+      validation:
+        required: true
+        type: object
+        properties:
+          name:
+            type: string
+            min_length: 2
+          email:
+            type: email
+      metadata:
+        progress: 0.5
+    
+    confirm:
+      type: confirmation
+      message:
+        text: "Is this information correct?\nName: {{name}}\nEmail: {{email}}"
+        buttons:
+          - label: "Yes, continue"
+            value: "yes"
+          - label: "No, go back"
+            value: "no"
+      metadata:
+        progress: 0.8
+      actions:
+        - type: set_field
+          target: name
+          value: "{{user_response.name}}"
+        - type: set_field
+          target: email
+          value: "{{user_response.email}}"
+    
+    complete:
+      type: end
+      message: "Thank you! Your information has been saved."
+      metadata:
+        progress: 1.0
 
-transitions:
-  - from: collect_info
-    to: confirm
-    condition: { type: always }
-  - from: confirm
-    to: complete
-    condition:
-      type: equals
-      field: user_response
-      value: "yes"
-  - from: confirm
-    to: collect_info
-    condition:
-      type: equals
-      field: user_response
-      value: "no"
+  transitions:
+    - from: collect_info
+      to: confirm
+      condition:
+        type: always
+    
+    - from: confirm
+      to: complete
+      condition:
+        type: equals
+        field: user_response
+        value: "yes"
+    
+    - from: confirm
+      to: collect_info
+      condition:
+        type: equals
+        field: user_response
+        value: "no"
+      actions:
+        - type: set_field
+          target: name
+          value: ""
+        - type: set_field
+          target: email
+          value: ""
 ```
+
+**Key features:**
+- Validation ensures data quality before confirmation
+- Clear confirmation message showing collected data
+- Ability to go back and correct information
+- Progress indicators for user feedback
 
 ### 11.2 Skip Conditions
 
 Skip states based on collected data:
 
 ```yaml
-states:
-  ask_premium:
-    type: question
-    message: "Do you want premium features?"
-    metadata:
-      skip_conditions:
-        - type: equals
-          field: user_type
-          value: "premium"
+flow:
+  name: onboarding_with_skip
+  version: "1.0.0"
+  description: "Onboarding that skips premium questions for premium users"
+  initial_state: collect_user_type
+  
+  states:
+    collect_user_type:
+      type: question
+      message: "What type of user are you? (free/premium)"
+      validation:
+        required: true
+        type: string
+        enum: ["free", "premium"]
+      actions:
+        - type: set_field
+          target: user_type
+          value: "{{user_response}}"
+    
+    ask_premium:
+      type: question
+      message: "Do you want premium features?"
+      metadata:
+        skip_conditions:
+          - type: equals
+            field: user_type
+            value: "premium"
+      # This state will be skipped if user_type is "premium"
+    
+    complete:
+      type: end
+      message: "Onboarding complete!"
+
+  transitions:
+    - from: collect_user_type
+      to: ask_premium
+      condition:
+        type: always
+    
+    - from: ask_premium
+      to: complete
+      condition:
+        type: always
 ```
+
+**Note:** When `skip_conditions` are met, the Flow Orchestrator automatically skips to the next valid state.
 
 ### 11.3 Multi-Step Data Collection
 
@@ -681,39 +770,163 @@ states:
 
 ---
 
-## 12. Troubleshooting
+## 12. Common Mistakes
 
-### 12.1 Common Issues
+### 12.1 Flow Design Mistakes
+
+**Mistake: Circular state transitions**
+
+- **Problem:** Creating loops that trap users in states (e.g., A→B→A with no exit)
+- **Solution:** Ensure every flow path eventually reaches an `end` state
+- **Why:** Prevents users from getting stuck in infinite loops
+
+**Mistake: Missing transition conditions**
+
+- **Problem:** State has no valid transitions, leaving users stuck
+- **Solution:** Always provide at least one transition with `type: always` or proper conditions
+- **Why:** Users need a way to progress through the flow
+
+**Mistake: Overly complex flows**
+
+- **Problem:** Too many states and transitions make flows hard to maintain and debug
+- **Solution:** Break complex flows into smaller, focused flows
+- **Why:** Simpler flows are easier to test, debug, and modify
+
+**Mistake: Not handling all user input possibilities**
+
+- **Problem:** Flow only handles expected inputs, fails on unexpected responses
+- **Solution:** Add catch-all transitions or validation with helpful error messages
+- **Why:** Users don't always follow expected patterns
+
+### 12.2 State Management Mistakes
+
+**Mistake: Not clearing session data between flows**
+
+- **Problem:** Data from previous flow contaminates new flow
+- **Solution:** Clear conversation_data when starting new flow or use flow-specific namespaces
+- **Why:** Prevents data leakage between different conversation contexts
+
+**Mistake: Storing sensitive data in session**
+
+- **Problem:** Storing passwords, tokens, or PII in Redis sessions
+- **Solution:** Store only necessary conversation state, keep sensitive data encrypted or in secure storage
+- **Why:** Redis sessions may be accessible to multiple services
+
+**Mistake: Not setting appropriate session expiry**
+
+- **Problem:** Sessions expire too quickly (frustrating users) or too slowly (wasting resources)
+- **Solution:** Set expiry based on flow complexity and expected conversation duration
+- **Why:** Balances user experience with resource usage
+
+### 12.3 Validation Mistakes
+
+**Mistake: Overly strict validation**
+
+- **Problem:** Rejecting valid inputs due to overly narrow validation rules
+- **Solution:** Use appropriate validation types and provide helpful error messages
+- **Why:** Users may format inputs differently than expected
+
+**Mistake: Not validating before state transition**
+
+- **Problem:** Invalid data causes errors in subsequent states
+- **Solution:** Always validate input before transitioning to next state
+- **Why:** Prevents cascading errors and provides immediate feedback
+
+**Mistake: Generic error messages**
+
+- **Problem:** Error messages don't help users understand what went wrong
+- **Solution:** Provide specific, actionable error messages in validation
+- **Example:**
+  - ❌ Bad: "Invalid input"
+  - ✅ Good: "Email must be a valid email address (e.g., user@example.com)"
+
+---
+
+## 13. Troubleshooting
+
+### 13.1 Common Issues
 
 **Issue: Flow not found**
 
 - **Symptom:** Flow Orchestrator returns 404 or flow not found error
 - **Solution:** Verify flow file exists in `/flows/` directory
 - **Check:** Flow name and version match variant config
+- **Debug steps:**
+  1. List flow files: `ls flows/`
+  2. Verify flow_id in variant config matches filename (without extension)
+  3. Check Flow Orchestrator can access `/flows/` directory
+  4. Validate YAML syntax: `yamllint flows/my_flow.yml`
 
 **Issue: Invalid transition**
 
 - **Symptom:** User stuck in state, no valid transitions
 - **Solution:** Check transition conditions match user input
 - **Check:** Verify all required fields are set before transition
+- **Debug steps:**
+  1. Inspect current session state: Check Redis for session data
+  2. List all transitions from current state: Review flow definition
+  3. Evaluate conditions manually: Test condition logic with current data
+  4. Check for typos in field names or condition values
 
 **Issue: Session expired**
 
 - **Symptom:** Session not found error
 - **Solution:** Increase session expiry or handle expiry gracefully
 - **Check:** Verify Redis connection and session storage
+- **Debug steps:**
+  1. Check Redis connection: `redis-cli ping`
+  2. Verify session expiry setting: Check Flow Orchestrator configuration
+  3. Check session TTL: `redis-cli TTL flow_session:{session_id}`
+  4. Review session creation logs: Ensure sessions are being created
 
-### 12.2 Debugging Tips
+**Issue: State transition loops**
 
-- **Check flow definition:** Validate YAML syntax
-- **Verify state names:** Ensure all referenced states exist
-- **Test conditions:** Verify condition logic matches expected behavior
-- **Check session data:** Inspect conversation_data in Redis
-- **Review logs:** Check Flow Orchestrator logs for errors
+- **Symptom:** User keeps returning to same state
+- **Solution:** Review transition conditions to find circular references
+- **Check:** Trace transition path to identify loop
+- **Debug steps:**
+  1. Map all transitions: Create visual diagram of state flow
+  2. Identify cycles: Look for states that transition back to themselves
+  3. Check condition logic: Verify conditions aren't always true when they shouldn't be
+
+**Issue: Validation always fails**
+
+- **Symptom:** User input never passes validation, can't progress
+- **Solution:** Review validation rules for correctness and appropriateness
+- **Check:** Test validation with sample inputs
+- **Debug steps:**
+  1. Test validation independently: Validate input outside flow context
+  2. Check validation type: Ensure type matches input (e.g., string vs number)
+  3. Review regex patterns: Test patterns with regex tester
+  4. Check for required fields: Ensure all required fields are provided
+
+**Issue: Actions not executing**
+
+- **Symptom:** Actions defined in transitions or states don't run
+- **Solution:** Verify action syntax and check Flow Orchestrator logs
+- **Check:** Ensure actions are defined correctly in YAML
+- **Debug steps:**
+  1. Validate YAML syntax: Check for indentation errors
+  2. Review action types: Ensure action type is supported
+  3. Check action parameters: Verify all required parameters are provided
+  4. Review service logs: Check for action execution errors
+
+### 13.2 Debugging Tips
+
+- **Check flow definition:** Validate YAML syntax with `yamllint` or online validator
+- **Verify state names:** Ensure all referenced states exist in flow definition
+- **Test conditions:** Verify condition logic matches expected behavior with sample data
+- **Check session data:** Inspect conversation_data in Redis: `redis-cli GET flow_session:{session_id}`
+- **Review logs:** Check Flow Orchestrator logs for errors or warnings
+- **Trace execution:** Add logging actions to track flow execution path
+- **Validate transitions:** Manually test each transition with sample inputs
+- **Check Redis connectivity:** Ensure Flow Orchestrator can connect to Redis
+- **Review flow version:** Verify correct flow version is loaded
+- **Test with curl:** Use Flow Orchestrator API directly to test flows
 
 ---
 
-## 13. Further Exploration
+## 14. Further Exploration
 
 - **Flow schema reference** → [../flows/SCHEMA.md](../flows/SCHEMA.md)
 - **Example flows** → [../flows/README.md](../flows/README.md)
@@ -721,6 +934,37 @@ states:
 - **Flow Orchestrator design** → [../services/flow-orchestrator/DESIGN.md](../services/flow-orchestrator/DESIGN.md)
 - **Using flows in experiments** → [experiments.md](experiments.md) (section 4.4)
 - **Prompt management** → [prompts-guide.md](prompts-guide.md)
+- **Complete example project** → [../examples/conversational-assistant/README.md](../examples/conversational-assistant/README.md)
+- **Conversational AI quickstart** → [routes/conversational-ai-route.md](routes/conversational-ai-route.md)
+
+**See Also:**
+- [choosing-project-type.md](choosing-project-type.md) - Help deciding if flows are right for your project
+- [mcp-integration.md](mcp-integration.md) - Using MCP tools in flows
+- [experiments.md](experiments.md) - Configuring experiments with flows
+
+---
+
+## Quick Reference: State Types and Conditions
+
+### State Types
+| Type | Purpose | Use Case |
+|------|---------|----------|
+| `question` | Ask user a question | Simple Q&A |
+| `confirmation` | Get yes/no confirmation | Confirm actions |
+| `data_collection` | Collect structured data | Forms, multi-field input |
+| `ai_response` | Generate AI response | LLM-powered interactions |
+| `end` | Terminal state | Flow completion |
+
+### Condition Types
+| Type | Description | Example |
+|------|-------------|---------|
+| `always` | Always true | Unconditional transition |
+| `equals` | Field equals value | `field: "user_response"`, `value: "yes"` |
+| `contains` | Field contains value | Check if array/string contains item |
+| `matches` | Field matches regex | Email validation |
+| `exists` | Field exists and not null | Check if data collected |
+| `and` | All conditions true | Complex logic |
+| `or` | Any condition true | Multiple options |
 
 ---
 
@@ -732,5 +976,6 @@ You will understand:
 - Different flow patterns (linear, decision tree, hybrid)
 - How sessions are managed
 - Best practices for flow design
+- Common mistakes and troubleshooting
 
 **Next Step**: [experiments.md](experiments.md) or [prompts-guide.md](prompts-guide.md)
