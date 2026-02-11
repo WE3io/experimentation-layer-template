@@ -373,7 +373,48 @@ if rate_limiter.exceeded(event.unit_id):
 
 ---
 
-## 10. TODO: Implementation Notes
+## 11. Security and PII Handling
+
+The Event Ingestion Service is responsible for ensuring that sensitive Personal Identifiable Information (PII) is not persisted in plain text or leaked into downstream analytics.
+
+### 11.1 PII Identification and Masking
+
+The service maintains a list of sensitive fields that must be masked or hashed before storage.
+
+| Data Type | Handling Strategy | Examples |
+|-----------|-------------------|----------|
+| User Email | SHA-256 Hash | `user@example.com` -> `5e88...` |
+| IP Address | Anonymization (last octet) | `192.168.1.1` -> `192.168.1.0` |
+| Geo Location | Rounding (1 decimal place) | `45.1234, -122.5678` -> `45.1, -122.6` |
+| Precise Names | Drop from payload | `John Doe` -> (removed) |
+
+### 11.2 Ingestion-Time Filtering
+
+The `Validator` component performs PII filtering before the `Writer` persists data to either PostgreSQL or S3.
+
+```pseudo
+function filter_pii(payload):
+    sensitive_keys = ["email", "phone", "first_name", "last_name", "full_name"]
+    for key in sensitive_keys:
+        if key in payload:
+            # Option 1: Hash the value (if needed for joining)
+            payload[key] = hash_sha256(payload[key])
+            # Option 2: Mask the value
+            # payload[key] = "[MASKED]"
+            # Option 3: Remove the value
+            # del payload[key]
+    return payload
+```
+
+### 11.3 Access Control
+
+- **Ingestion Tokens:** Every client must use a unique Bearer token with appropriate scopes.
+- **Internal Access:** Only authorized services (e.g., training pipelines) can access raw events in S3.
+- **Analytics:** Metabase access is restricted to aggregated or anonymized views.
+
+---
+
+## 12. TODO: Implementation Notes
 
 - [ ] Choose web framework (e.g., FastAPI, Express, Go Gin)
 - [ ] Implement batch insert optimization

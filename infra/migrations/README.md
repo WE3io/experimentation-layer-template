@@ -1,78 +1,32 @@
 # Database Migrations
 
-**Purpose**  
-This directory contains SQL migration files for evolving the database schema over time.
+This directory contains PostgreSQL schema migrations managed by [yoyo-migrations](https://ollyp.github.io/yoyo/).
 
----
+## Usage
+
+### 1. Install Requirements
+```bash
+pip install -r ../requirements-migrations.txt
+```
+
+### 2. Run Migrations
+To apply all pending migrations:
+```bash
+yoyo apply --database postgresql://postgres:postgres@localhost:5432/experimentation_platform ./migrations
+```
+
+Or using the config file:
+```bash
+yoyo apply --config ./yoyo.ini
+```
+
+### 3. Create a New Migration
+```bash
+yoyo new ./migrations -m "description_of_change"
+```
 
 ## Migration Files
+Migration files are SQL scripts named with a prefix like `001_`, `002_`, etc. Yoyo tracks applied migrations in a `_yoyo_migration` table in the database.
 
-Migrations are numbered sequentially and include both forward and rollback scripts.
-
-### Current Migrations
-
-- `001_add_unified_variant_config_support.sql` - Adds support for unified variant config structure while maintaining backward compatibility
-- `002_add_prompt_registry.sql` - Creates exp.prompts and exp.prompt_versions tables for conversational AI prompt management
-- `003_add_mcp_tool_registry.sql` - Creates exp.mcp_tools and exp.variant_tools tables for MCP tool management
-- `004_add_conversation_event_support.sql` - Adds indexes and documentation for conversation event types (conversation_started, message_sent, flow_completed, user_dropped_off)
-
----
-
-## Running Migrations
-
-### Apply Migration
-
-```bash
-psql -d your_database -f infra/migrations/001_add_unified_variant_config_support.sql
-```
-
-### Verify Migration
-
-After applying, verify the migration succeeded:
-
-```sql
--- Check that the column comment was added
-SELECT col_description('exp.variants'::regclass, 
-    (SELECT ordinal_position FROM information_schema.columns 
-     WHERE table_schema = 'exp' AND table_name = 'variants' AND column_name = 'config'));
-```
-
-### Rollback Migration
-
-If needed, rollback using the instructions in the migration file comments.
-
----
-
-## Migration Guidelines
-
-1. **Always include rollback instructions** in migration file comments
-2. **Test migrations** on a copy of production data before applying
-3. **Update `infra/postgres-schema-overview.sql`** to reflect schema changes
-4. **Maintain backward compatibility** when possible
-5. **Document breaking changes** clearly in migration comments
-
----
-
-## Testing Existing Configs
-
-After applying migration `001_add_unified_variant_config_support.sql`, verify existing configs still work:
-
-```sql
--- Test that existing configs are still valid JSONB
-SELECT id, config 
-FROM exp.variants 
-WHERE config ? 'policy_version_id'
-LIMIT 5;
-
--- Test that new unified config format can be inserted
-INSERT INTO exp.variants (experiment_id, name, allocation, config)
-VALUES (
-    '00000000-0000-0000-0000-000000000001'::uuid,
-    'test_variant',
-    0.1,
-    '{"execution_strategy": "mlflow_model", "mlflow_model": {"policy_version_id": "test-uuid"}, "params": {}}'::jsonb
-);
-
--- Clean up test
-DELETE FROM exp.variants WHERE name = 'test_variant';
-```
+## Security Note
+The database connection string in `yoyo.ini` uses default credentials. For non-local environments, use environment variables or a secure configuration management system.

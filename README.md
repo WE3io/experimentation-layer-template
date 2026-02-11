@@ -137,5 +137,5 @@ Jump directly to the relevant [Exploration Route](#quick-navigation) based on yo
 
 ---
 
-**TODO**: Add links to actual infrastructure endpoints once deployed.
+**Note**: Infrastructure endpoints (MLflow, Metabase, API services) will be provided here once the production environment is deployed. For local development, refer to the [Infrastructure Guide](infra/docker-compose.yml).
 

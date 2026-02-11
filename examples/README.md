@@ -14,6 +14,14 @@ A complete conversational AI project demonstrating:
 - Experiment configuration for A/B testing prompts
 - Integration with Prompt Service and Flow Orchestrator
 
+### [Traditional ML Experiment](./traditional-ml-experiment/)
+
+A complete traditional ML project demonstrating:
+- Model training and metric logging with MLflow
+- Model registration in the MLflow Model Registry
+- Dataset conventions using Parquet
+- Integration with the ML-based assignment strategy
+
 **Use this example if:** You're building chatbots, LLM-powered assistants, or structured dialogue systems.
 
 **Quick Start:** See [conversational-assistant/README.md](./conversational-assistant/README.md)
